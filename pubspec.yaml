@@ -1,0 +1,21 @@
+name: app_profesor
+description: "A new Flutter project."
+publish_to: 'none'  
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.0.2
+  sqflite: ^2.3.0
+  path_provider: ^2.0.15
+  shared_preferences: ^2.2.0
+  logger: ^2.0.2
+  cupertino_icons: ^1.0.8
+  supabase_flutter: ^2.0.0 # Versión actualizada
+
+dev_dependencies:
+  flutter_lints: ^2.0.0 # Agregado para reglas de lint recomendadas
