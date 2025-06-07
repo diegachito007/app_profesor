@@ -1,6 +1,6 @@
 name: app_profesor
-description: "A new Flutter project."
-publish_to: 'none'  
+description: "Profeshor 1.0"
+publish_to: 'none'
 version: 1.0.0+1
 
 environment:
@@ -17,6 +17,10 @@ dependencies:
   cupertino_icons: ^1.0.8
   supabase_flutter: ^2.0.0 # Versión actualizada
   flutter_dotenv: ^5.2.1
+  intl: ^0.20.2
+
+flutter: # ✅ Agregar esta sección
+  uses-material-design: true
 
 dev_dependencies:
   flutter_lints: ^2.0.0 # Agregado para reglas de lint recomendadas

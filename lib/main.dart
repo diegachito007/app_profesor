@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Profeshor1.0',
-      theme: ThemeData(primarySwatch: Colors.blue),
+      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
       initialRoute: '/home',
       routes: appRoutes,
     );

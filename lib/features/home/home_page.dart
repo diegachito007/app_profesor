@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'home_controller.dart';
+import '../../data/controllers/home_controller.dart';
 import '../../data/database/license_storage.dart';
+import '../../data/database/sqlite_service.dart'; // ✅ Importación de SQLite
 import '../dashboard/dashboard_page.dart'; // Importa la pantalla de Dashboard
 
 class HomePage extends StatefulWidget {
@@ -13,7 +14,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   final HomeController controller = HomeController();
   bool licenciaValidada = false;
-  bool cargando = true; // ✅ Se inicia en "true" para evitar pantalla negra
+  bool cargando = true;
 
   @override
   void initState() {
@@ -31,9 +32,7 @@ class _HomePageState extends State<HomePage> {
         cargando = false;
       });
 
-      _mostrarBienvenida(
-        () => _irADashboard(),
-      ); // ✅ Muestra diálogo antes de ir al Dashboard
+      _mostrarBienvenida(); // ✅ Muestra el diálogo antes de ir al Dashboard
       return;
     }
 
@@ -46,43 +45,55 @@ class _HomePageState extends State<HomePage> {
         cargando = false;
       });
 
-      _mostrarBienvenida(
-        () => _irADashboard(),
-      ); // ✅ Muestra diálogo antes de ir al Dashboard
+      _mostrarBienvenida(); // ✅ Muestra el diálogo antes de ir al Dashboard
     } else {
-      setState(() => cargando = false); // ✅ Si falla, muestra el contenido
+      setState(() => cargando = false);
     }
   }
 
-  void _mostrarBienvenida(VoidCallback onComplete) {
+  void _mostrarBienvenida() async {
+    if (!mounted) {
+      return; // ✅ Verifica que el widget aún existe antes de mostrar el diálogo
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => const AlertDialog(
-        title: Text("Bienvenido a Profeshor 1.0"),
-        content: SizedBox(
-          width: 200,
-          height: 50,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              LinearProgressIndicator(), // ✅ Barra de progreso animada
-              SizedBox(height: 10),
-              Text("Cargando..."),
-            ],
-          ),
+        title: Text("Bienvenido"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text("Preparando la aplicación..."),
+            SizedBox(height: 10),
+            SizedBox(
+              width: 200,
+              child: LinearProgressIndicator(), // ✅ Barra de progreso animada
+            ),
+          ],
         ),
       ),
     );
 
+    await _verificarBaseDeDatos(); // ✅ Verifica y crea la BD si es necesario
+
+    if (!mounted) return;
     Future.delayed(const Duration(seconds: 2), () {
-      if (!mounted) return;
-      Navigator.pop(context); // ✅ Cierra el diálogo de bienvenida
-      onComplete(); // ✅ Continúa con la navegación al Dashboard
+      if (!mounted) return; // ✅ Verifica antes de cerrar el diálogo
+      Navigator.pop(context); // ✅ Cierra el diálogo sin errores
+      _irADashboard(); // ✅ Va al Dashboard
     });
   }
 
+  Future<void> _verificarBaseDeDatos() async {
+    final dbExiste = await SQLiteService.databaseExists();
+    if (!dbExiste) {
+      await SQLiteService.inicializarBaseDeDatos(); // ✅ Crea la BD si no existe
+    }
+  }
+
   void _irADashboard() {
+    if (!mounted) return; // ✅ Verifica antes de navegar
     Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (context) => const DashboardPage()),
@@ -95,9 +106,9 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       body: Center(
         child: cargando
-            ? const CircularProgressIndicator() // ✅ Muestra carga mientras verifica
+            ? const CircularProgressIndicator()
             : licenciaValidada
-            ? const SizedBox() // ✅ Evita pantalla negra si la licencia es válida
+            ? const SizedBox()
             : ElevatedButton(
                 onPressed: () {
                   if (!mounted) return;
