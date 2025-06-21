@@ -26,4 +26,9 @@ class PeriodosController {
   Future<void> eliminarPeriodo(int id) async {
     await PeriodosService.eliminarPeriodo(id);
   }
+
+  Future<void> activarPeriodo(int id) async {
+    await PeriodosService.desactivarTodos();
+    await PeriodosService.activarPeriodo(id);
+  }
 }

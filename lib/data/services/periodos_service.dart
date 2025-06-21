@@ -4,7 +4,7 @@ import '../models/periodo_model.dart';
 class PeriodosService {
   static Future<List<Periodo>> obtenerPeriodos() async {
     final db = await SQLiteService.getDatabase();
-    final List<Map<String, dynamic>> result = await db.query('periodos');
+    final result = await db.query('periodos');
     return result.map((map) => Periodo.fromMap(map)).toList();
   }
 
@@ -18,6 +18,7 @@ class PeriodosService {
       'nombre': nombre,
       'inicio': inicio.toIso8601String(),
       'fin': fin.toIso8601String(),
+      'activo': 0,
     });
   }
 
@@ -43,5 +44,20 @@ class PeriodosService {
   static Future<void> eliminarPeriodo(int id) async {
     final db = await SQLiteService.getDatabase();
     await db.delete('periodos', where: 'id = ?', whereArgs: [id]);
+  }
+
+  static Future<void> desactivarTodos() async {
+    final db = await SQLiteService.getDatabase();
+    await db.update('periodos', {'activo': 0});
+  }
+
+  static Future<void> activarPeriodo(int id) async {
+    final db = await SQLiteService.getDatabase();
+    await db.update(
+      'periodos',
+      {'activo': 1},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 }

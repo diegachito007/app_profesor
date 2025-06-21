@@ -1,30 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'config.dart'; // 🔹 Importamos el archivo de configuración
 import 'routes/app_routes.dart';
+import 'shared/theme/app_theme.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  await Supabase.initialize(
-    url: Config.supabaseUrl,
-    anonKey: Config.supabaseAnonKey,
-  );
-
-  runApp(const MyApp());
+  runApp(const ProfeshorApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class ProfeshorApp extends StatelessWidget {
+  const ProfeshorApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Profeshor1.0',
-      theme: ThemeData(primarySwatch: Colors.blue, useMaterial3: true),
+      title: 'Profeshor',
+      theme: AppTheme.temaProfeshor,
       initialRoute: '/home',
-      routes: appRoutes,
+      onGenerateRoute: AppRouter.generateRoute,
     );
   }
 }

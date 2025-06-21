@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^2.0.2
   sqflite: ^2.3.0
+  path: ^1.9.0 # ✅ Agregado para manejo de rutas internas
   path_provider: ^2.0.15
   shared_preferences: ^2.2.0
   logger: ^2.0.2
@@ -19,8 +20,10 @@ dependencies:
   flutter_dotenv: ^5.2.1
   intl: ^0.20.2
 
-flutter: # ✅ Agregar esta sección
+flutter:
   uses-material-design: true
+  assets:
+    - assets/images/logo.png
 
 dev_dependencies:
   flutter_lints: ^2.0.0 # Agregado para reglas de lint recomendadas

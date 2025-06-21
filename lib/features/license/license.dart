@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:logger/logger.dart';
+import '../db/database.dart';
+import 'license_storage.dart';
 
 class LicenciaPage extends StatefulWidget {
   const LicenciaPage({super.key});
@@ -25,7 +26,7 @@ class _LicenciaPageState extends State<LicenciaPage> {
       _mensajeExito = null;
     });
 
-    String licencia = _controller.text.trim();
+    final licencia = _controller.text.trim();
 
     try {
       final response = await supabase
@@ -38,41 +39,33 @@ class _LicenciaPageState extends State<LicenciaPage> {
       logger.d('Respuesta de Supabase: $response');
 
       if (response != null) {
-        String nombre = response['nombre'];
-        await _guardarLicenciaLocal(licencia, nombre);
+        final nombre = response['nombre'] as String;
+        await LicenseStorage.guardarLicencia(licencia, nombre);
 
-        if (mounted) {
-          setState(
-            () => _mensajeExito = "Validación correcta. Bienvenido, $nombre",
-          );
-        }
+        if (!mounted) return;
 
-        await Future.delayed(const Duration(seconds: 2));
+        setState(() {
+          _mensajeExito = "Validación correcta. Bienvenido, $nombre";
+        });
 
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/home');
-        }
+        await DatabaseHelper.inicializar(context);
       } else {
         if (mounted) {
-          setState(
-            () => _mensajeError = 'Licencia inválida, intenta de nuevo.',
-          );
+          setState(() {
+            _mensajeError = 'Licencia inválida, intenta de nuevo.';
+          });
         }
       }
     } catch (e) {
       logger.e('Error de conexión con Supabase: $e');
       if (mounted) {
-        setState(() => _mensajeError = 'Error de conexión con Supabase: $e');
+        setState(() {
+          _mensajeError = 'Error al conectar con Supabase';
+        });
       }
     }
 
     if (mounted) setState(() => _loading = false);
-  }
-
-  Future<void> _guardarLicenciaLocal(String licencia, String nombre) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('licencia_codigo', licencia);
-    await prefs.setString('licencia_nombre', nombre);
   }
 
   @override
