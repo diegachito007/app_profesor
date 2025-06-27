@@ -13,22 +13,23 @@ class Periodo {
     required this.activo,
   });
 
-  Map<String, dynamic> toMap() {
+  // 👇 Úsalo para inserciones y actualizaciones a la base
+  Map<String, dynamic> toDatabaseMap() {
     return {
-      'id': id,
+      'id': id == 0 ? null : id, // SQLite manejará autoincrement si es null
       'nombre': nombre,
-      'inicio': inicio.toIso8601String(),
-      'fin': fin.toIso8601String(),
+      'fecha_inicio': inicio.toIso8601String(),
+      'fecha_fin': fin.toIso8601String(),
       'activo': activo ? 1 : 0,
     };
   }
 
   factory Periodo.fromMap(Map<String, dynamic> map) {
     return Periodo(
-      id: map['id'],
-      nombre: map['nombre'],
-      inicio: DateTime.parse(map['inicio']),
-      fin: DateTime.parse(map['fin']),
+      id: map['id'] as int,
+      nombre: map['nombre'] as String,
+      inicio: DateTime.parse(map['fecha_inicio'] as String),
+      fin: DateTime.parse(map['fecha_fin'] as String),
       activo: map['activo'] == 1,
     );
   }

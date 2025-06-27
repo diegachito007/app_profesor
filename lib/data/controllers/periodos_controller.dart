@@ -1,17 +1,24 @@
-import '../services/periodos_service.dart';
 import '../models/periodo_model.dart';
+import '../services/periodos_service.dart';
 
 class PeriodosController {
-  Future<List<Periodo>> cargarPeriodos() async {
-    return await PeriodosService.obtenerPeriodos();
-  }
+  final PeriodosService _service = PeriodosService();
+
+  Future<List<Periodo>> cargarPeriodos() => _service.obtenerTodos();
 
   Future<void> agregarPeriodo(
     String nombre,
     DateTime inicio,
     DateTime fin,
   ) async {
-    await PeriodosService.agregarPeriodo(nombre, inicio, fin);
+    final nuevo = Periodo(
+      id: 0,
+      nombre: nombre,
+      inicio: inicio,
+      fin: fin,
+      activo: false,
+    );
+    await _service.insertar(nuevo);
   }
 
   Future<void> actualizarPeriodo(
@@ -20,15 +27,20 @@ class PeriodosController {
     DateTime inicio,
     DateTime fin,
   ) async {
-    await PeriodosService.actualizarPeriodo(id, nombre, inicio, fin);
+    final actualizado = Periodo(
+      id: id,
+      nombre: nombre,
+      inicio: inicio,
+      fin: fin,
+      activo: false, // El servicio no modifica el campo activo
+    );
+    await _service.actualizar(actualizado);
   }
 
-  Future<void> eliminarPeriodo(int id) async {
-    await PeriodosService.eliminarPeriodo(id);
-  }
+  Future<void> eliminarPeriodo(int id) => _service.eliminar(id);
 
-  Future<void> activarPeriodo(int id) async {
-    await PeriodosService.desactivarTodos();
-    await PeriodosService.activarPeriodo(id);
-  }
+  Future<void> activarPeriodo(int id) => _service.activar(id);
+
+  Future<bool> existeNombrePeriodo(String nombre) =>
+      _service.existeNombre(nombre);
 }

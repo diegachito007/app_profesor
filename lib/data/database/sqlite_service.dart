@@ -7,12 +7,17 @@ import 'package:sqflite/sqflite.dart';
 class SQLiteService {
   static Database? _database;
 
+  // ✅ Getter principal para acceder desde cualquier parte con SQLiteService.db
+  static Future<Database> get db => getDatabase();
+
+  // 🔍 Comprobar si la base existe (útil para validar estado)
   static Future<bool> databaseExists() async {
     final dir = await getApplicationDocumentsDirectory();
     final path = p.join(dir.path, 'profeshor.db');
     return File(path).exists();
   }
 
+  // 🧨 Eliminar completamente la base de datos
   static Future<void> eliminarBaseDeDatos() async {
     final dir = await getApplicationDocumentsDirectory();
     final path = p.join(dir.path, 'profeshor.db');
@@ -22,14 +27,16 @@ class SQLiteService {
     }
   }
 
+  // 🟢 Inicializar una vez (por ejemplo al arranque)
   static Future<void> inicializarBaseDeDatos() async {
     if (_database != null && _database!.isOpen) {
-      debugPrint('📦 Reutilizando instancia de base de datos existente');
+      debugPrint('📦 Reutilizando instancia existente de base de datos');
       return;
     }
     _database = await getDatabase();
   }
 
+  // 📥 Obtener la base (crea si no existe)
   static Future<Database> getDatabase() async {
     if (_database != null && _database!.isOpen) {
       debugPrint('📦 Base de datos ya inicializada');
@@ -59,6 +66,7 @@ class SQLiteService {
     return _database!;
   }
 
+  // 📐 Crear estructura completa de la base de datos
   static Future<void> _crearTablas(Database db) async {
     await db.execute('''
       CREATE TABLE periodos (
@@ -181,6 +189,7 @@ class SQLiteService {
       );
     ''');
 
+    // 📊 Índices
     await db.execute(
       'CREATE INDEX idx_estudiantes_curso ON estudiantes(curso_id);',
     );
@@ -198,6 +207,7 @@ class SQLiteService {
     );
   }
 
+  // 🧪 Insertar datos de prueba solo si deseas arrancar con ejemplos
   static Future<void> _insertarDatosEjemplo(Database db) async {
     await db.insert('periodos', {
       'nombre': 'Periodo 2024 - A',
@@ -215,7 +225,7 @@ class SQLiteService {
       'nombre': 'Periodo 2025 - A',
       'fecha_inicio': '2025-01-10T00:00:00.000',
       'fecha_fin': '2025-06-25T00:00:00.000',
-      'activo': 1, // este será el activo por defecto
+      'activo': 1,
     });
   }
 }
