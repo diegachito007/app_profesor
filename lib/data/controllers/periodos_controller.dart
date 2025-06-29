@@ -5,25 +5,26 @@ import '../models/periodo_model.dart';
 import '../services/periodos_service.dart';
 import '../providers/database_provider.dart';
 
-final periodosControllerProvider = FutureProvider<PeriodosController>((
-  ref,
-) async {
-  final db = await ref.watch(databaseProvider.future);
-  final controller = PeriodosController(PeriodosService(db));
-  await controller.cargarPeriodos();
-  return controller;
-});
+final periodosControllerProvider =
+    AsyncNotifierProvider<PeriodosController, List<Periodo>>(
+      PeriodosController.new,
+    );
 
-class PeriodosController {
-  final PeriodosService service;
+class PeriodosController extends AsyncNotifier<List<Periodo>> {
+  late final PeriodosService _service;
   List<Periodo> _periodos = [];
 
-  PeriodosController(this.service);
-
-  List<Periodo> get periodos => _periodos;
+  @override
+  Future<List<Periodo>> build() async {
+    final db = await ref.watch(databaseProvider.future);
+    _service = PeriodosService(db);
+    _periodos = await _service.obtenerTodos();
+    return _periodos;
+  }
 
   Future<void> cargarPeriodos() async {
-    _periodos = await service.obtenerTodos();
+    _periodos = await _service.obtenerTodos();
+    state = AsyncValue.data(_periodos);
   }
 
   Future<void> agregarPeriodo(
@@ -38,7 +39,7 @@ class PeriodosController {
       fin: fin,
       activo: false,
     );
-    await service.insertar(nuevo);
+    await _service.insertar(nuevo);
     await cargarPeriodos();
   }
 
@@ -55,23 +56,24 @@ class PeriodosController {
       fin: fin,
       activo: false,
     );
-    await service.actualizar(actualizado);
+    await _service.actualizar(actualizado);
     await cargarPeriodos();
   }
 
   Future<void> eliminarPeriodo(int id) async {
-    await service.eliminar(id);
+    await _service.eliminar(id);
     await cargarPeriodos();
   }
 
   Future<void> activarPeriodo(int id) async {
-    await service.desactivarTodos();
-    await service.activar(id);
+    await _service.desactivarTodos();
+    await _service.activar(id);
     await cargarPeriodos();
   }
 
-  Future<bool> existeNombrePeriodo(String nombre) =>
-      service.existeNombre(nombre);
+  Future<bool> existeNombrePeriodo(String nombre) {
+    return _service.existeNombre(nombre);
+  }
 
   Periodo? get periodoActivo => _periodos.firstWhereOrNull((p) => p.activo);
 }

@@ -37,7 +37,7 @@ class _AgregarCursosPageState extends ConsumerState<AgregarCursosPage> {
   final List<String> paralelos = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
 
   Future<void> guardarCursos() async {
-    final periodo = ref.read(periodoActivoProvider).value;
+    final periodo = ref.read(periodoActivoProvider);
     if (nivelSeleccionado == null ||
         paralelosSeleccionados.isEmpty ||
         periodo == null) {

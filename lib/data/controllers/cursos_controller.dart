@@ -9,41 +9,41 @@ final cursosControllerProvider =
     AsyncNotifierProvider<CursosController, List<Curso>>(CursosController.new);
 
 class CursosController extends AsyncNotifier<List<Curso>> {
-  late final CursosService _service;
-
   @override
   Future<List<Curso>> build() async {
-    final db = await ref.watch(databaseProvider.future);
-    final periodo = await ref.watch(periodoActivoProvider.future);
-
+    final periodo = ref.watch(periodoActivoProvider);
     if (periodo == null) return [];
 
-    _service = CursosService(db);
-    return _service.obtenerCursosPorPeriodo(periodo.id);
+    final db = await ref.watch(databaseProvider.future);
+    final service = CursosService(db);
+    return service.obtenerCursosPorPeriodo(periodo.id);
   }
 
   Future<void> agregarCursos(List<Curso> nuevos) async {
     state = const AsyncValue.loading();
 
     try {
-      final periodo = await ref.read(periodoActivoProvider.future);
+      final periodo = ref.read(periodoActivoProvider);
       if (periodo == null) {
         state = AsyncValue.error('No hay período activo', StackTrace.current);
         return;
       }
 
+      final db = await ref.read(databaseProvider.future);
+      final service = CursosService(db);
+
       for (final curso in nuevos) {
-        final existe = await _service.existeCurso(
+        final existe = await service.existeCurso(
           curso.nombre,
           curso.paralelo,
           periodo.id,
         );
         if (!existe) {
-          await _service.insertarCurso(curso);
+          await service.insertarCurso(curso);
         }
       }
 
-      final actualizados = await _service.obtenerCursosPorPeriodo(periodo.id);
+      final actualizados = await service.obtenerCursosPorPeriodo(periodo.id);
       state = AsyncValue.data(actualizados);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -52,14 +52,17 @@ class CursosController extends AsyncNotifier<List<Curso>> {
 
   Future<void> archivarCurso(int id) async {
     try {
-      final periodo = await ref.read(periodoActivoProvider.future);
+      final periodo = ref.read(periodoActivoProvider);
       if (periodo == null) {
         state = AsyncValue.error('No hay período activo', StackTrace.current);
         return;
       }
 
-      await _service.archivarCurso(id);
-      final actualizados = await _service.obtenerCursosPorPeriodo(periodo.id);
+      final db = await ref.read(databaseProvider.future);
+      final service = CursosService(db);
+
+      await service.archivarCurso(id);
+      final actualizados = await service.obtenerCursosPorPeriodo(periodo.id);
       state = AsyncValue.data(actualizados);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
@@ -68,14 +71,17 @@ class CursosController extends AsyncNotifier<List<Curso>> {
 
   Future<bool> eliminarCurso(int id) async {
     try {
-      final tieneDependencias = await _service.cursoTieneDatosRelacionados(id);
+      final db = await ref.read(databaseProvider.future);
+      final service = CursosService(db);
+
+      final tieneDependencias = await service.cursoTieneDatosRelacionados(id);
       if (tieneDependencias) return false;
 
-      await _service.eliminarCurso(id);
+      await service.eliminarCurso(id);
 
-      final periodo = await ref.read(periodoActivoProvider.future);
+      final periodo = ref.read(periodoActivoProvider);
       if (periodo != null) {
-        final actualizados = await _service.obtenerCursosPorPeriodo(periodo.id);
+        final actualizados = await service.obtenerCursosPorPeriodo(periodo.id);
         state = AsyncValue.data(actualizados);
       }
 

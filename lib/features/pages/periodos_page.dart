@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../data/controllers/cursos_controller.dart';
 import '../../data/controllers/periodos_controller.dart';
 import '../../data/models/periodo_model.dart';
 import '../../shared/utils/log_helper.dart';
@@ -93,8 +94,8 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
 
                           final nombreFinal =
                               '${fechaInicio?.year}-${fechaFin?.year}';
-                          final controller = await ref.read(
-                            periodosControllerProvider.future,
+                          final controller = ref.read(
+                            periodosControllerProvider.notifier,
                           );
 
                           try {
@@ -120,7 +121,6 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
                               );
                               if (context.mounted) {
                                 Navigator.pop(context);
-                                setState(() {});
                                 LogHelper.showSuccess(
                                   context,
                                   "Período creado correctamente",
@@ -135,7 +135,6 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
                               );
                               if (context.mounted) {
                                 Navigator.pop(context);
-                                setState(() {});
                                 LogHelper.showSuccess(
                                   context,
                                   "Período actualizado correctamente",
@@ -199,10 +198,9 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
 
     if (confirmado == true) {
       try {
-        final controller = await ref.read(periodosControllerProvider.future);
+        final controller = ref.read(periodosControllerProvider.notifier);
         await controller.eliminarPeriodo(periodo.id);
         if (!mounted) return;
-        setState(() {});
         LogHelper.showSuccess(context, "Período eliminado correctamente");
       } catch (e) {
         if (!mounted) return;
@@ -247,15 +245,16 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
 
   @override
   Widget build(BuildContext context) {
-    final controllerAsync = ref.watch(periodosControllerProvider);
+    final periodosAsync = ref.watch(periodosControllerProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text("Períodos Académicos")),
-      body: controllerAsync.when(
+      body: periodosAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text("Error: $e")),
-        data: (controller) {
-          final periodos = controller.periodos
+        data: (periodos) {
+          final controller = ref.read(periodosControllerProvider.notifier);
+          final filtrados = periodos
               .where(
                 (p) => p.nombre.toLowerCase().contains(_filtro.toLowerCase()),
               )
@@ -281,14 +280,12 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
                   onChanged: (value) => setState(() => _filtro = value),
                 ),
               ),
-              if (periodos.isEmpty)
+              if (filtrados.isEmpty)
                 const Padding(
                   padding: EdgeInsets.all(24),
                   child: Center(child: Text('No se encontraron períodos.')),
                 ),
-              ...periodos.map(
-                (periodo) => _buildPeriodoTile(periodo, controller),
-              ),
+              ...filtrados.map((p) => _buildPeriodoTile(p, controller)),
               const SizedBox(height: 100),
             ],
           );
@@ -336,9 +333,7 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
         decoration: BoxDecoration(
           color: Colors.grey.shade100,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: Colors.grey.shade300,
-          ), // 👈 Borde sutil agregado
+          border: Border.all(color: Colors.grey.shade300),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withAlpha((0.03 * 255).round()),
@@ -377,7 +372,7 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
                         tooltip: 'Activar este período',
                         onPressed: () async {
                           await controller.activarPeriodo(periodo.id);
-                          setState(() {});
+                          ref.invalidate(cursosControllerProvider);
                         },
                       )
                     else

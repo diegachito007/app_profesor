@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../data/controllers/cursos_controller.dart';
+import '../../data/models/periodo_model.dart';
 import '../../data/models/curso_model.dart';
+import '../../data/providers/periodo_activo_provider.dart';
 import 'agregar_cursos_page.dart';
 
 class CursosPage extends ConsumerStatefulWidget {
@@ -15,8 +18,18 @@ class _CursosPageState extends ConsumerState<CursosPage> {
   String _filtro = '';
 
   @override
+  void initState() {
+    super.initState();
+    // 👇 Escucha cambios en el período activo y fuerza reconstrucción
+    ref.listen<Periodo?>(periodoActivoProvider, (previous, next) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final cursosAsync = ref.watch(cursosControllerProvider);
+    final periodo = ref.watch(periodoActivoProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Cursos')),
@@ -58,11 +71,17 @@ class _CursosPageState extends ConsumerState<CursosPage> {
                 ),
               ),
               if (activos.isNotEmpty) ...[
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   child: Text(
-                    'Cursos activos',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    'Cursos activos${periodo != null ? ' : Período ${periodo.nombre}' : ''}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 ...activos.map((curso) => _buildCursoTile(context, ref, curso)),
@@ -163,9 +182,7 @@ class _CursosPageState extends ConsumerState<CursosPage> {
         decoration: BoxDecoration(
           color: Colors.grey.shade100,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: Colors.grey.shade300,
-          ), // 👈 Borde sutil agregado
+          border: Border.all(color: Colors.grey.shade300),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withAlpha((0.03 * 255).round()),
