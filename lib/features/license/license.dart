@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:logger/logger.dart';
-import '../db/database.dart';
 import 'license_storage.dart';
 
 class LicenciaPage extends StatefulWidget {
@@ -48,7 +47,8 @@ class _LicenciaPageState extends State<LicenciaPage> {
           _mensajeExito = "Validación correcta. Bienvenido, $nombre";
         });
 
-        await DatabaseHelper.inicializar(context);
+        // Navegar directamente al dashboard
+        Navigator.pushReplacementNamed(context, '/dashboard');
       } else {
         if (mounted) {
           setState(() {
@@ -93,10 +93,15 @@ class _LicenciaPageState extends State<LicenciaPage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: _loading ? null : _validarLicencia,
               child: _loading
-                  ? const CircularProgressIndicator()
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
                   : const Text("Validar"),
             ),
           ],

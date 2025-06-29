@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import 'routes/app_routes.dart';
 import 'shared/theme/app_theme.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProfeshorApp());
+  runApp(const ProviderScope(child: ProfeshorApp()));
 }
 
 class ProfeshorApp extends StatelessWidget {

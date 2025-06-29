@@ -29,7 +29,7 @@ class DashboardPage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 20),
-              _buildPeriodosCard(context), // ✅ Card con navegación
+              _buildPeriodosCard(context),
               const SizedBox(height: 10),
               Expanded(child: _buildGridMenu(context)),
             ],
@@ -39,13 +39,9 @@ class DashboardPage extends StatelessWidget {
     );
   }
 
-  /// ✅ Card que navega a Períodos Académicos al presionar
   Widget _buildPeriodosCard(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(
-        context,
-        '/periodos',
-      ), // ✅ Navegación con rutas nombradas
+      onTap: () => Navigator.pushNamed(context, '/periodos'),
       child: Card(
         elevation: 6,
         color: Colors.blue.shade300,
@@ -87,6 +83,8 @@ class DashboardPage extends StatelessWidget {
       itemCount: items.length,
       itemBuilder: (context, index) {
         final item = items[index];
+        final title = item["title"] as String;
+
         return Card(
           elevation: 6,
           color: Colors.blue.shade300,
@@ -94,7 +92,13 @@ class DashboardPage extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
           ),
           child: InkWell(
-            onTap: () => _mostrarMensaje(context, item["title"] as String),
+            onTap: () {
+              if (title == "Cursos") {
+                Navigator.pushNamed(context, '/cursos');
+              } else {
+                _mostrarMensaje(context, title);
+              }
+            },
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -105,7 +109,7 @@ class DashboardPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  item["title"] as String,
+                  title,
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -140,7 +144,7 @@ class DashboardPage extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             child: const Text("No"),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
               SystemNavigator.pop();

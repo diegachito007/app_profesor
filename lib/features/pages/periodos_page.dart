@@ -1,32 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+
 import '../../data/controllers/periodos_controller.dart';
 import '../../data/models/periodo_model.dart';
 import '../../shared/utils/log_helper.dart';
 
-class PeriodosPage extends StatefulWidget {
+class PeriodosPage extends ConsumerStatefulWidget {
   const PeriodosPage({super.key});
 
   @override
-  State<PeriodosPage> createState() => _PeriodosPageState();
+  ConsumerState<PeriodosPage> createState() => _PeriodosPageState();
 }
 
-class _PeriodosPageState extends State<PeriodosPage> {
-  final PeriodosController _controller = PeriodosController();
-  late Future<List<Periodo>> _periodos;
-
-  @override
-  void initState() {
-    super.initState();
-    _cargarPeriodos();
-  }
-
-  void _cargarPeriodos() {
-    setState(() {
-      _periodos = _controller.cargarPeriodos();
-    });
-  }
-
+class _PeriodosPageState extends ConsumerState<PeriodosPage> {
   void _mostrarDialogoPeriodo({Periodo? periodo}) {
     DateTime? fechaInicio = periodo?.inicio;
     DateTime? fechaFin = periodo?.fin;
@@ -60,7 +47,7 @@ class _PeriodosPageState extends State<PeriodosPage> {
                     Padding(
                       padding: const EdgeInsets.only(top: 12),
                       child: Text(
-                        "Nombre generado: $nombreGenerado",
+                        "Periodo: $nombreGenerado",
                         style: const TextStyle(color: Colors.grey),
                       ),
                     ),
@@ -92,7 +79,7 @@ class _PeriodosPageState extends State<PeriodosPage> {
                           if (fechaInicio!.isAfter(fechaFin!)) {
                             setModalState(() {
                               mensajeError =
-                                  "La fecha de inicio no puede ser posterior a la fecha final";
+                                  "La fecha de inicio no puede ser posterior a la fecha final.";
                             });
                             return;
                           }
@@ -104,10 +91,14 @@ class _PeriodosPageState extends State<PeriodosPage> {
 
                           final nombreFinal =
                               '${fechaInicio?.year}-${fechaFin?.year}';
+                          final controller = await ref.read(
+                            periodosControllerProvider.future,
+                          );
 
                           try {
-                            final existe = await _controller
-                                .existeNombrePeriodo(nombreFinal);
+                            final existe = await controller.existeNombrePeriodo(
+                              nombreFinal,
+                            );
                             if (existe &&
                                 (periodo == null ||
                                     nombreFinal != periodo.nombre)) {
@@ -120,21 +111,21 @@ class _PeriodosPageState extends State<PeriodosPage> {
                             }
 
                             if (periodo == null) {
-                              await _controller.agregarPeriodo(
+                              await controller.agregarPeriodo(
                                 nombreFinal,
                                 fechaInicio!,
                                 fechaFin!,
                               );
                               if (context.mounted) {
                                 Navigator.pop(context);
-                                _cargarPeriodos();
+                                setState(() {});
                                 LogHelper.showSuccess(
                                   context,
                                   "Período creado correctamente",
                                 );
                               }
                             } else {
-                              await _controller.actualizarPeriodo(
+                              await controller.actualizarPeriodo(
                                 periodo.id,
                                 nombreFinal,
                                 fechaInicio!,
@@ -142,7 +133,7 @@ class _PeriodosPageState extends State<PeriodosPage> {
                               );
                               if (context.mounted) {
                                 Navigator.pop(context);
-                                _cargarPeriodos();
+                                setState(() {});
                                 LogHelper.showSuccess(
                                   context,
                                   "Período actualizado correctamente",
@@ -206,9 +197,10 @@ class _PeriodosPageState extends State<PeriodosPage> {
 
     if (confirmado == true) {
       try {
-        await _controller.eliminarPeriodo(periodo.id);
-        _cargarPeriodos();
+        final controller = await ref.read(periodosControllerProvider.future);
+        await controller.eliminarPeriodo(periodo.id);
         if (!mounted) return;
+        setState(() {});
         LogHelper.showSuccess(context, "Período eliminado correctamente");
       } catch (e) {
         if (!mounted) return;
@@ -253,15 +245,16 @@ class _PeriodosPageState extends State<PeriodosPage> {
 
   @override
   Widget build(BuildContext context) {
+    final controllerAsync = ref.watch(periodosControllerProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text("Períodos Académicos")),
-      body: FutureBuilder<List<Periodo>>(
-        future: _periodos,
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.data!.isEmpty) {
+      body: controllerAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text("Error: $e")),
+        data: (controller) {
+          final periodos = controller.periodos;
+          if (periodos.isEmpty) {
             return const Center(
               child: Text(
                 "No existen períodos académicos",
@@ -269,7 +262,7 @@ class _PeriodosPageState extends State<PeriodosPage> {
               ),
             );
           }
-          return _buildListaPeriodos(snapshot.data!);
+          return _buildListaPeriodos(periodos, controller);
         },
       ),
       floatingActionButton: FloatingActionButton(
@@ -279,7 +272,10 @@ class _PeriodosPageState extends State<PeriodosPage> {
     );
   }
 
-  Widget _buildListaPeriodos(List<Periodo> periodos) {
+  Widget _buildListaPeriodos(
+    List<Periodo> periodos,
+    PeriodosController controller,
+  ) {
     return ListView.builder(
       itemCount: periodos.length,
       itemBuilder: (context, index) {
@@ -321,8 +317,8 @@ class _PeriodosPageState extends State<PeriodosPage> {
                     icon: const Icon(Icons.check_circle_outline),
                     tooltip: 'Activar este período',
                     onPressed: () async {
-                      await _controller.activarPeriodo(periodo.id);
-                      _cargarPeriodos();
+                      await controller.activarPeriodo(periodo.id);
+                      setState(() {});
                     },
                   )
                 else

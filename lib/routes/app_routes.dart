@@ -4,6 +4,7 @@ import '../features/home/home.dart';
 import '../features/license/license.dart';
 import '../features/dashboard/dashboard_page.dart';
 import '../features/pages/periodos_page.dart';
+import '../features/pages/cursos_page.dart'; // Ajusta la ruta si es diferente
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -16,6 +17,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const DashboardPage());
       case '/periodos':
         return MaterialPageRoute(builder: (_) => const PeriodosPage());
+      case '/cursos':
+        return MaterialPageRoute(builder: (_) => const CursosPage());
       default:
         return MaterialPageRoute(
           builder: (_) =>

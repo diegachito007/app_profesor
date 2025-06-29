@@ -1,10 +1,30 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:collection/collection.dart';
+
 import '../models/periodo_model.dart';
 import '../services/periodos_service.dart';
+import '../providers/database_provider.dart';
+
+final periodosControllerProvider = FutureProvider<PeriodosController>((
+  ref,
+) async {
+  final db = await ref.watch(databaseProvider.future);
+  final controller = PeriodosController(PeriodosService(db));
+  await controller.cargarPeriodos();
+  return controller;
+});
 
 class PeriodosController {
-  final PeriodosService _service = PeriodosService();
+  final PeriodosService service;
+  List<Periodo> _periodos = [];
 
-  Future<List<Periodo>> cargarPeriodos() => _service.obtenerTodos();
+  PeriodosController(this.service);
+
+  List<Periodo> get periodos => _periodos;
+
+  Future<void> cargarPeriodos() async {
+    _periodos = await service.obtenerTodos();
+  }
 
   Future<void> agregarPeriodo(
     String nombre,
@@ -18,7 +38,8 @@ class PeriodosController {
       fin: fin,
       activo: false,
     );
-    await _service.insertar(nuevo);
+    await service.insertar(nuevo);
+    await cargarPeriodos();
   }
 
   Future<void> actualizarPeriodo(
@@ -32,15 +53,25 @@ class PeriodosController {
       nombre: nombre,
       inicio: inicio,
       fin: fin,
-      activo: false, // El servicio no modifica el campo activo
+      activo: false,
     );
-    await _service.actualizar(actualizado);
+    await service.actualizar(actualizado);
+    await cargarPeriodos();
   }
 
-  Future<void> eliminarPeriodo(int id) => _service.eliminar(id);
+  Future<void> eliminarPeriodo(int id) async {
+    await service.eliminar(id);
+    await cargarPeriodos();
+  }
 
-  Future<void> activarPeriodo(int id) => _service.activar(id);
+  Future<void> activarPeriodo(int id) async {
+    await service.desactivarTodos();
+    await service.activar(id);
+    await cargarPeriodos();
+  }
 
   Future<bool> existeNombrePeriodo(String nombre) =>
-      _service.existeNombre(nombre);
+      service.existeNombre(nombre);
+
+  Periodo? get periodoActivo => _periodos.firstWhereOrNull((p) => p.activo);
 }
