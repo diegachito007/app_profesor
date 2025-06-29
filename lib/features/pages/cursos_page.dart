@@ -20,7 +20,6 @@ class _CursosPageState extends ConsumerState<CursosPage> {
   @override
   void initState() {
     super.initState();
-    // 👇 Escucha cambios en el período activo y fuerza reconstrucción
     ref.listen<Periodo?>(periodoActivoProvider, (previous, next) {
       if (mounted) setState(() {});
     });
@@ -29,7 +28,6 @@ class _CursosPageState extends ConsumerState<CursosPage> {
   @override
   Widget build(BuildContext context) {
     final cursosAsync = ref.watch(cursosControllerProvider);
-    final periodo = ref.watch(periodoActivoProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Cursos')),
@@ -71,17 +69,11 @@ class _CursosPageState extends ConsumerState<CursosPage> {
                 ),
               ),
               if (activos.isNotEmpty) ...[
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Text(
-                    'Cursos activos${periodo != null ? ' : Período ${periodo.nombre}' : ''}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    'Cursos activos',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                 ),
                 ...activos.map((curso) => _buildCursoTile(context, ref, curso)),
