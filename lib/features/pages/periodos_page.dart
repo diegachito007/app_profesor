@@ -254,6 +254,16 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
         error: (e, _) => Center(child: Text("Error: $e")),
         data: (periodos) {
           final controller = ref.read(periodosControllerProvider.notifier);
+
+          if (periodos.isEmpty) {
+            return const Center(
+              child: Text(
+                'No se encontraron períodos.',
+                style: TextStyle(fontSize: 16),
+              ),
+            );
+          }
+
           final filtrados = periodos
               .where(
                 (p) => p.nombre.toLowerCase().contains(_filtro.toLowerCase()),
