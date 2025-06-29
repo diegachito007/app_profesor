@@ -163,6 +163,9 @@ class _CursosPageState extends ConsumerState<CursosPage> {
         decoration: BoxDecoration(
           color: Colors.grey.shade100,
           borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: Colors.grey.shade300,
+          ), // 👈 Borde sutil agregado
           boxShadow: [
             BoxShadow(
               color: Colors.black.withAlpha((0.03 * 255).round()),
