@@ -145,6 +145,7 @@ class _CursosPageState extends ConsumerState<CursosPage> {
                 ),
               ),
             ),
+            const SizedBox(width: 16),
             ElevatedButton.icon(
               onPressed: () {
                 Navigator.push(
@@ -220,8 +221,8 @@ class _CursosPageState extends ConsumerState<CursosPage> {
               },
             ),
             IconButton(
-              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-              tooltip: 'Eliminar',
+              icon: const Icon(Icons.delete, color: Colors.redAccent),
+              tooltip: 'Eliminar curso',
               onPressed: () async {
                 final confirmado = await _confirmar(
                   context,

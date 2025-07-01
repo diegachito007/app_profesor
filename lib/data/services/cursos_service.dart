@@ -29,6 +29,10 @@ class CursosService {
     );
   }
 
+  Future<void> eliminarCurso(int cursoId) async {
+    await db.delete('cursos', where: 'id = ?', whereArgs: [cursoId]);
+  }
+
   Future<void> archivarCurso(int id) async {
     await db.update('cursos', {'activo': 0}, where: 'id = ?', whereArgs: [id]);
   }
@@ -56,9 +60,5 @@ class CursosService {
       [cursoId],
     );
     return materias.isNotEmpty || estudiantes.isNotEmpty;
-  }
-
-  Future<void> eliminarCurso(int cursoId) async {
-    await db.delete('cursos', where: 'id = ?', whereArgs: [cursoId]);
   }
 }

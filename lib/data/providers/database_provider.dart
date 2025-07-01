@@ -12,7 +12,7 @@ final databaseProvider = FutureProvider<Database>((ref) async {
   final exists = await File(path).exists();
   final db = await openDatabase(
     path,
-    version: 2, // Aumentamos la versión para activar la migración
+    version: 4,
     onCreate: (db, version) async {
       await _crearTablas(db);
       debugPrint('✅ Base de datos creada');
@@ -22,11 +22,48 @@ final databaseProvider = FutureProvider<Database>((ref) async {
         debugPrint(
           '🔄 Migrando base de datos de v$oldVersion a v$newVersion...',
         );
-        await db.execute(
-          'ALTER TABLE cursos ADD COLUMN activo INTEGER NOT NULL DEFAULT 1;',
-        );
-        debugPrint('✅ Columna "activo" agregada a la tabla cursos');
+
+        await db.execute('ALTER TABLE materias RENAME TO materias_old;');
+
+        await db.execute('''
+          CREATE TABLE materias (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nombre TEXT NOT NULL UNIQUE
+          );
+        ''');
+
+        await db.execute('''
+          CREATE TABLE materias_curso (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            curso_id INTEGER NOT NULL,
+            materia_id INTEGER NOT NULL,
+            activo INTEGER DEFAULT 1,
+            fecha_asignacion TEXT NOT NULL,
+            fecha_desactivacion TEXT,
+            FOREIGN KEY (curso_id) REFERENCES cursos(id) ON DELETE CASCADE,
+            FOREIGN KEY (materia_id) REFERENCES materias(id) ON DELETE CASCADE
+          );
+        ''');
+
+        await db.execute('''
+          INSERT INTO materias (nombre)
+          SELECT DISTINCT nombre FROM materias_old;
+        ''');
+
+        await db.execute('''
+          INSERT INTO materias_curso (curso_id, materia_id, activo, fecha_asignacion)
+          SELECT mo.curso_id, m.id, 1, DATE('now')
+          FROM materias_old mo
+          JOIN materias m ON m.nombre = mo.nombre;
+        ''');
+
+        await db.execute('DROP TABLE materias_old;');
+
+        debugPrint('✅ Migración completada');
       }
+
+      // 👇 Asegura que las materias por defecto se inserten si no existen
+      await _insertarMateriasPorDefecto(db);
     },
   );
 
@@ -62,9 +99,20 @@ Future<void> _crearTablas(Database db) async {
   await db.execute('''
     CREATE TABLE materias (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre TEXT NOT NULL,
+      nombre TEXT NOT NULL UNIQUE
+    );
+  ''');
+
+  await db.execute('''
+    CREATE TABLE materias_curso (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
       curso_id INTEGER NOT NULL,
-      FOREIGN KEY (curso_id) REFERENCES cursos(id) ON DELETE CASCADE
+      materia_id INTEGER NOT NULL,
+      activo INTEGER DEFAULT 1,
+      fecha_asignacion TEXT NOT NULL,
+      fecha_desactivacion TEXT,
+      FOREIGN KEY (curso_id) REFERENCES cursos(id) ON DELETE CASCADE,
+      FOREIGN KEY (materia_id) REFERENCES materias(id) ON DELETE CASCADE
     );
   ''');
 
@@ -86,10 +134,10 @@ Future<void> _crearTablas(Database db) async {
       tipo TEXT NOT NULL,
       descripcion TEXT,
       fecha TEXT NOT NULL,
-      materia_id INTEGER NOT NULL,
+      materia_curso_id INTEGER NOT NULL,
       ponderacion REAL NOT NULL CHECK(ponderacion BETWEEN 0 AND 100),
       trimestre TEXT NOT NULL CHECK(trimestre IN ('1', '2', '3')),
-      FOREIGN KEY (materia_id) REFERENCES materias(id) ON DELETE CASCADE
+      FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
     );
   ''');
 
@@ -143,10 +191,10 @@ Future<void> _crearTablas(Database db) async {
   await db.execute('''
     CREATE TABLE temas_personalizados (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      materia_id INTEGER NOT NULL,
+      materia_curso_id INTEGER NOT NULL,
       curso_id INTEGER NOT NULL,
       titulo TEXT NOT NULL,
-      FOREIGN KEY (materia_id) REFERENCES materias(id) ON DELETE CASCADE,
+      FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE,
       FOREIGN KEY (curso_id) REFERENCES cursos(id) ON DELETE CASCADE
     );
   ''');
@@ -161,11 +209,12 @@ Future<void> _crearTablas(Database db) async {
     );
   ''');
 
+  // Índices
   await db.execute(
     'CREATE INDEX idx_estudiantes_curso ON estudiantes(curso_id);',
   );
   await db.execute(
-    'CREATE INDEX idx_evaluaciones_materia ON evaluaciones(materia_id);',
+    'CREATE INDEX idx_evaluaciones_materia ON evaluaciones(materia_curso_id);',
   );
   await db.execute(
     'CREATE INDEX idx_notas_estudiante ON notas(estudiante_id);',
@@ -176,4 +225,40 @@ Future<void> _crearTablas(Database db) async {
   await db.execute(
     'CREATE INDEX idx_visitas_padres_fecha ON visitas_padres(fecha, estudiante_id);',
   );
+
+  // 👇 Insertar materias por defecto
+  await _insertarMateriasPorDefecto(db);
+}
+
+Future<void> _insertarMateriasPorDefecto(Database db) async {
+  final count = Sqflite.firstIntValue(
+    await db.rawQuery('SELECT COUNT(*) FROM materias'),
+  );
+
+  if (count == 0) {
+    const materias = [
+      'Matemática',
+      'Lengua y Literatura',
+      'Ciencias Naturales',
+      'Estudios Sociales',
+      'Educación Física',
+      'Inglés',
+      'Educación Cultural y Artística',
+      'Física',
+      'Química',
+      'Biología',
+      'Historia',
+      'Filosofía',
+      'Economía',
+    ];
+
+    for (final nombre in materias) {
+      await db.insert('materias', {
+        'nombre': nombre,
+      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      debugPrint('📘 Materia insertada: $nombre');
+    }
+  } else {
+    debugPrint('ℹ️ Materias ya existentes: $count');
+  }
 }

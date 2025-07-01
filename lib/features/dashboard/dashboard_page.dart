@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Para cerrar la app
+import 'package:flutter/services.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -43,20 +43,16 @@ class DashboardPage extends StatelessWidget {
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, '/periodos'),
       child: Card(
-        elevation: 6,
-        color: Colors.blue.shade300,
+        elevation: 8,
+        color: Colors.cyan.shade400,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        child: ListTile(
-          leading: Icon(
-            Icons.date_range,
-            color: Colors.blue.shade900,
-            size: 40,
-          ),
-          title: const Text(
+        child: const ListTile(
+          leading: Icon(Icons.date_range, color: Colors.white, size: 40),
+          title: Text(
             "Períodos Académicos",
             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
           ),
-          subtitle: const Text(
+          subtitle: Text(
             "Gestiona los períodos activos",
             style: TextStyle(color: Colors.white70),
           ),
@@ -75,6 +71,15 @@ class DashboardPage extends StatelessWidget {
       {"icon": Icons.insert_chart, "title": "Reportes"},
     ];
 
+    final colorMap = {
+      "Cursos": Colors.teal.shade300,
+      "Materias": Colors.deepPurple.shade300,
+      "Estudiantes": Colors.indigo.shade300,
+      "Notas": Colors.orange.shade300,
+      "Asistencia": Colors.pink.shade300,
+      "Reportes": Colors.green.shade400,
+    };
+
     return GridView.builder(
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
@@ -84,29 +89,33 @@ class DashboardPage extends StatelessWidget {
       itemBuilder: (context, index) {
         final item = items[index];
         final title = item["title"] as String;
+        final icon = item["icon"] as IconData;
+
+        final backgroundColor = colorMap[title] ?? Colors.blue.shade300;
 
         return Card(
-          elevation: 6,
-          color: Colors.blue.shade300,
+          elevation: 8,
+          color: backgroundColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10),
           ),
           child: InkWell(
             onTap: () {
-              if (title == "Cursos") {
-                Navigator.pushNamed(context, '/cursos');
-              } else {
-                _mostrarMensaje(context, title);
+              switch (title) {
+                case "Cursos":
+                  Navigator.pushNamed(context, '/cursos');
+                  break;
+                case "Materias":
+                  Navigator.pushNamed(context, '/materias');
+                  break;
+                default:
+                  _mostrarMensaje(context, title);
               }
             },
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  item["icon"] as IconData,
-                  color: Colors.blue.shade900,
-                  size: 40,
-                ),
+                Icon(icon, color: Colors.white, size: 40),
                 const SizedBox(height: 10),
                 Text(
                   title,

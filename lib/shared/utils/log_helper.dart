@@ -19,6 +19,15 @@ class LogHelper {
     );
   }
 
+  static void showWarning(BuildContext context, String mensaje) {
+    _showSnackBar(
+      context,
+      mensaje,
+      backgroundColor: Colors.orange.shade700,
+      icon: Icons.warning_amber_rounded,
+    );
+  }
+
   static void _showSnackBar(
     BuildContext context,
     String mensaje, {

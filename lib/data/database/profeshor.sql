@@ -19,12 +19,22 @@ CREATE TABLE cursos (
   FOREIGN KEY (periodo_id) REFERENCES periodos(id) ON DELETE CASCADE
 );
 
--- Tabla: materias
+-- Tabla: materias (catálogo general)
 CREATE TABLE materias (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  nombre TEXT NOT NULL,
+  nombre TEXT NOT NULL UNIQUE
+);
+
+-- Tabla: curso-materia
+CREATE TABLE materias_curso (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
   curso_id INTEGER NOT NULL,
-  FOREIGN KEY (curso_id) REFERENCES cursos(id) ON DELETE CASCADE
+  materia_id INTEGER NOT NULL,
+  activo INTEGER DEFAULT 1,
+  fecha_asignacion TEXT NOT NULL,
+  fecha_desactivacion TEXT,
+  FOREIGN KEY (curso_id) REFERENCES cursos(id) ON DELETE CASCADE,
+  FOREIGN KEY (materia_id) REFERENCES materias(id) ON DELETE CASCADE
 );
 
 -- Tabla: estudiantes
@@ -38,16 +48,16 @@ CREATE TABLE estudiantes (
   FOREIGN KEY (curso_id) REFERENCES cursos(id) ON DELETE CASCADE
 );
 
--- Tabla: evaluaciones
+-- Tabla: evaluaciones (ahora referencian materias_curso)
 CREATE TABLE evaluaciones (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   tipo TEXT NOT NULL,
   descripcion TEXT,
   fecha TEXT NOT NULL,
-  materia_id INTEGER NOT NULL,
+  materia_curso_id INTEGER NOT NULL,
   ponderacion REAL NOT NULL CHECK(ponderacion BETWEEN 0 AND 100),
   trimestre TEXT NOT NULL CHECK(trimestre IN ('1', '2', '3')),
-  FOREIGN KEY (materia_id) REFERENCES materias(id) ON DELETE CASCADE
+  FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
 );
 
 -- Tabla: notas
@@ -93,13 +103,13 @@ CREATE TABLE visitas_padres (
   FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE
 );
 
--- Tabla: temas_personalizados
+-- Tabla: temas_personalizados (actualizada para usar materias_curso)
 CREATE TABLE temas_personalizados (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  materia_id INTEGER NOT NULL,
+  materia_curso_id INTEGER NOT NULL,
   curso_id INTEGER NOT NULL,
   titulo TEXT NOT NULL,
-  FOREIGN KEY (materia_id) REFERENCES materias(id) ON DELETE CASCADE,
+  FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE,
   FOREIGN KEY (curso_id) REFERENCES cursos(id) ON DELETE CASCADE
 );
 
@@ -114,7 +124,7 @@ CREATE TABLE alertas_enviadas (
 
 -- Índices
 CREATE INDEX idx_estudiantes_curso ON estudiantes(curso_id);
-CREATE INDEX idx_evaluaciones_materia ON evaluaciones(materia_id);
+CREATE INDEX idx_evaluaciones_materia ON evaluaciones(materia_curso_id);
 CREATE INDEX idx_notas_estudiante ON notas(estudiante_id);
 CREATE INDEX idx_asistencias_fecha ON asistencias(fecha, estudiante_id);
 CREATE INDEX idx_visitas_padres_fecha ON visitas_padres(fecha, estudiante_id);
