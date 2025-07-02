@@ -5,6 +5,9 @@ import '../../data/controllers/cursos_controller.dart';
 import '../../data/models/periodo_model.dart';
 import '../../data/models/curso_model.dart';
 import '../../data/providers/periodo_activo_provider.dart';
+import '../../shared/utils/showdialogs.dart';
+import '../../shared/utils/notificaciones.dart';
+
 import 'agregar_cursos_page.dart';
 
 class CursosPage extends ConsumerStatefulWidget {
@@ -207,16 +210,22 @@ class _CursosPageState extends ConsumerState<CursosPage> {
               ),
               tooltip: curso.activo ? 'Archivar' : 'Restaurar',
               onPressed: () async {
-                final confirmado = await _confirmar(
-                  context,
-                  curso.activo
-                      ? '¿Archivar este curso?'
-                      : '¿Restaurar este curso?',
+                final confirmado = await ShowDialogs.showArchiveConfirmation(
+                  context: context,
+                  entityName: 'curso',
+                  itemLabel: curso.nombreCompleto,
+                  archivar: curso.activo,
                 );
-                if (confirmado) {
+                if (confirmado == true) {
                   await ref
                       .read(cursosControllerProvider.notifier)
                       .archivarCurso(curso.id);
+                  if (context.mounted) {
+                    Notificaciones.showSuccess(
+                      context,
+                      curso.activo ? 'Curso archivado' : 'Curso restaurado',
+                    );
+                  }
                 }
               },
             ),
@@ -224,22 +233,24 @@ class _CursosPageState extends ConsumerState<CursosPage> {
               icon: const Icon(Icons.delete, color: Colors.redAccent),
               tooltip: 'Eliminar curso',
               onPressed: () async {
-                final confirmado = await _confirmar(
-                  context,
-                  '¿Eliminar este curso?',
+                final confirmado = await ShowDialogs.showDeleteConfirmation(
+                  context: context,
+                  entityName: 'curso',
+                  itemLabel: curso.nombreCompleto,
                 );
-                if (confirmado) {
+                if (confirmado == true) {
                   final exito = await ref
                       .read(cursosControllerProvider.notifier)
                       .eliminarCurso(curso.id);
-                  if (!exito && context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'No se puede eliminar: el curso tiene datos relacionados.',
-                        ),
-                      ),
-                    );
+                  if (context.mounted) {
+                    if (exito) {
+                      Notificaciones.showSuccess(context, 'Curso eliminado');
+                    } else {
+                      Notificaciones.showError(
+                        context,
+                        'No se puede eliminar: el curso tiene datos relacionados.',
+                      );
+                    }
                   }
                 }
               },
@@ -248,26 +259,5 @@ class _CursosPageState extends ConsumerState<CursosPage> {
         ),
       ),
     );
-  }
-
-  Future<bool> _confirmar(BuildContext context, String mensaje) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Confirmación'),
-            content: Text(mensaje),
-            actions: [
-              TextButton(
-                child: const Text('Cancelar'),
-                onPressed: () => Navigator.pop(context, false),
-              ),
-              ElevatedButton(
-                child: const Text('Aceptar'),
-                onPressed: () => Navigator.pop(context, true),
-              ),
-            ],
-          ),
-        ) ??
-        false;
   }
 }

@@ -5,7 +5,8 @@ import 'package:intl/intl.dart';
 import '../../data/controllers/cursos_controller.dart';
 import '../../data/controllers/periodos_controller.dart';
 import '../../data/models/periodo_model.dart';
-import '../../shared/utils/log_helper.dart';
+import '../../shared/utils/notificaciones.dart';
+import '../../shared/utils/showdialogs.dart'; // ✅ Importación añadida
 
 class PeriodosPage extends ConsumerStatefulWidget {
   const PeriodosPage({super.key});
@@ -121,7 +122,7 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
                               );
                               if (context.mounted) {
                                 Navigator.pop(context);
-                                LogHelper.showSuccess(
+                                Notificaciones.showSuccess(
                                   context,
                                   "Período creado correctamente",
                                 );
@@ -135,7 +136,7 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
                               );
                               if (context.mounted) {
                                 Navigator.pop(context);
-                                LogHelper.showSuccess(
+                                Notificaciones.showSuccess(
                                   context,
                                   "Período actualizado correctamente",
                                 );
@@ -144,7 +145,7 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
                           } catch (e) {
                             if (context.mounted) {
                               Navigator.pop(context);
-                              LogHelper.showError(
+                              Notificaciones.showError(
                                 context,
                                 "Error al guardar: $e",
                               );
@@ -175,25 +176,10 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
   }
 
   Future<void> _confirmarEliminacion(Periodo periodo) async {
-    final confirmado = await showDialog<bool>(
+    final confirmado = await ShowDialogs.showDeleteConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("¿Eliminar período?"),
-        content: Text(
-          "Esta acción eliminará el período '${periodo.nombre}' de forma permanente.",
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text("Cancelar"),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: FilledButton.styleFrom(backgroundColor: Colors.red.shade700),
-            child: const Text("Eliminar"),
-          ),
-        ],
-      ),
+      entityName: 'período',
+      itemLabel: periodo.nombre,
     );
 
     if (confirmado == true) {
@@ -201,10 +187,10 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
         final controller = ref.read(periodosControllerProvider.notifier);
         await controller.eliminarPeriodo(periodo.id);
         if (!mounted) return;
-        LogHelper.showSuccess(context, "Período eliminado correctamente");
+        Notificaciones.showSuccess(context, "Período eliminado correctamente");
       } catch (e) {
         if (!mounted) return;
-        LogHelper.showError(context, "Error al eliminar período: $e");
+        Notificaciones.showError(context, "Error al eliminar período: $e");
       }
     }
   }

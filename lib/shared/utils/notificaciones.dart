@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class LogHelper {
+class Notificaciones {
   static void showError(BuildContext context, String mensaje) {
     _showSnackBar(
       context,

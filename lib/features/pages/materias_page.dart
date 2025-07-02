@@ -3,7 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/controllers/materias_controller.dart';
 import '../../data/models/materia_model.dart';
-import '../../shared/utils/log_helper.dart'; // ✅ Importación añadida
+import '../../shared/utils/notificaciones.dart'; // ✅ Importación añadida
+import '../../shared/utils/showdialogs.dart'; // ✅ Importación del diálogo reutilizable
 
 final filtroMateriasProvider = StateProvider<String>((ref) => '');
 
@@ -161,7 +162,7 @@ class MateriasPage extends ConsumerWidget {
           children: [
             ElevatedButton.icon(
               onPressed: () {
-                LogHelper.showWarning(
+                Notificaciones.showWarning(
                   context,
                   'Función de exportar aún no implementada',
                 );
@@ -217,7 +218,7 @@ class MateriasPage extends ConsumerWidget {
 
               if (nombre.length < 3) {
                 if (context.mounted) {
-                  LogHelper.showWarning(
+                  Notificaciones.showWarning(
                     context,
                     'El nombre debe tener al menos 3 caracteres.',
                   );
@@ -232,7 +233,7 @@ class MateriasPage extends ConsumerWidget {
 
               if (yaExiste) {
                 if (context.mounted) {
-                  LogHelper.showWarning(
+                  Notificaciones.showWarning(
                     context,
                     'La materia "$nombre" ya existe.',
                   );
@@ -246,11 +247,17 @@ class MateriasPage extends ConsumerWidget {
                     .read(materiasControllerProvider.notifier)
                     .agregarMateria(nueva);
                 if (context.mounted) {
-                  LogHelper.showSuccess(context, 'Materia "$nombre" agregada');
+                  Notificaciones.showSuccess(
+                    context,
+                    'Materia "$nombre" agregada',
+                  );
                 }
               } catch (_) {
                 if (context.mounted) {
-                  LogHelper.showError(context, 'Error al agregar la materia');
+                  Notificaciones.showError(
+                    context,
+                    'Error al agregar la materia',
+                  );
                 }
               }
             },
@@ -289,7 +296,7 @@ class MateriasPage extends ConsumerWidget {
 
               if (nuevoNombre.length < 3) {
                 if (context.mounted) {
-                  LogHelper.showWarning(
+                  Notificaciones.showWarning(
                     context,
                     'El nombre debe tener al menos 3 caracteres.',
                   );
@@ -308,7 +315,7 @@ class MateriasPage extends ConsumerWidget {
 
               if (yaExiste) {
                 if (context.mounted) {
-                  LogHelper.showWarning(
+                  Notificaciones.showWarning(
                     context,
                     'Ya existe una materia con el nombre "$nuevoNombre".',
                   );
@@ -322,14 +329,14 @@ class MateriasPage extends ConsumerWidget {
                     .read(materiasControllerProvider.notifier)
                     .actualizarMateria(actualizada);
                 if (context.mounted) {
-                  LogHelper.showSuccess(
+                  Notificaciones.showSuccess(
                     context,
                     'Materia actualizada a "$nuevoNombre"',
                   );
                 }
               } catch (_) {
                 if (context.mounted) {
-                  LogHelper.showError(
+                  Notificaciones.showError(
                     context,
                     'Error al actualizar la materia',
                   );
@@ -347,40 +354,29 @@ class MateriasPage extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     Materia materia,
-  ) {
-    showDialog(
+  ) async {
+    final confirm = await ShowDialogs.showDeleteConfirmation(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Confirmación'),
-        content: Text('¿Eliminar la materia "${materia.nombre}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(context);
-              try {
-                await ref
-                    .read(materiasControllerProvider.notifier)
-                    .eliminarMateria(materia.id);
-                if (context.mounted) {
-                  LogHelper.showSuccess(
-                    context,
-                    'Materia "${materia.nombre}" eliminada',
-                  );
-                }
-              } catch (_) {
-                if (context.mounted) {
-                  LogHelper.showError(context, 'Error al eliminar la materia');
-                }
-              }
-            },
-            child: const Text('Eliminar'),
-          ),
-        ],
-      ),
+      entityName: 'materia',
+      itemLabel: materia.nombre,
     );
+
+    if (confirm == true) {
+      try {
+        await ref
+            .read(materiasControllerProvider.notifier)
+            .eliminarMateria(materia.id);
+        if (context.mounted) {
+          Notificaciones.showSuccess(
+            context,
+            'Materia "${materia.nombre}" eliminada',
+          );
+        }
+      } catch (_) {
+        if (context.mounted) {
+          Notificaciones.showError(context, 'Error al eliminar la materia');
+        }
+      }
+    }
   }
 }

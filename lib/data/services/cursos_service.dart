@@ -33,8 +33,16 @@ class CursosService {
     await db.delete('cursos', where: 'id = ?', whereArgs: [cursoId]);
   }
 
+  /// ✅ Alterna el estado de activo entre 1 y 0
   Future<void> archivarCurso(int id) async {
-    await db.update('cursos', {'activo': 0}, where: 'id = ?', whereArgs: [id]);
+    await db.rawUpdate(
+      '''
+      UPDATE cursos
+      SET activo = CASE WHEN activo = 1 THEN 0 ELSE 1 END
+      WHERE id = ?
+    ''',
+      [id],
+    );
   }
 
   Future<bool> existeCurso(

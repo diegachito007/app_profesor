@@ -44,7 +44,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton.icon(
-                  icon: const Icon(Icons.play_arrow),
                   label: const Text('Iniciar'),
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(
