@@ -51,14 +51,17 @@ class CursosService {
   }
 
   Future<bool> cursoTieneDatosRelacionados(int cursoId) async {
-    final materias = await db.rawQuery(
-      'SELECT 1 FROM materias WHERE curso_id = ? LIMIT 1',
+    final materiasRelacionadas = await db.rawQuery(
+      'SELECT 1 FROM materias_curso WHERE curso_id = ? LIMIT 1',
       [cursoId],
     );
-    final estudiantes = await db.rawQuery(
+
+    final estudiantesRelacionados = await db.rawQuery(
       'SELECT 1 FROM estudiantes WHERE curso_id = ? LIMIT 1',
       [cursoId],
     );
-    return materias.isNotEmpty || estudiantes.isNotEmpty;
+
+    return materiasRelacionadas.isNotEmpty ||
+        estudiantesRelacionados.isNotEmpty;
   }
 }
