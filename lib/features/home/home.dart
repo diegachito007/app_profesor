@@ -37,21 +37,23 @@ class _HomePageState extends ConsumerState<HomePage> {
               children: [
                 Image.asset('assets/images/logo.png', width: 120),
                 const SizedBox(height: 40),
-                const Text(
-                  'Bienvenido a Profeshor',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 32),
-                ElevatedButton.icon(
-                  label: const Text('Iniciar'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 14,
+                TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.8, end: 1.0),
+                  duration: const Duration(milliseconds: 600),
+                  curve: Curves.easeOutBack,
+                  builder: (context, scale, child) {
+                    return Transform.scale(scale: scale, child: child);
+                  },
+                  child: ElevatedButton.icon(
+                    label: const Text('Iniciar'),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 14,
+                      ),
                     ),
+                    onPressed: () => iniciarValidacionProfeshor(context, ref),
                   ),
-                  onPressed: () => iniciarValidacionProfeshor(context, ref),
                 ),
               ],
             ),

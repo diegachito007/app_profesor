@@ -210,6 +210,8 @@ Future<void> _crearTablas(Database db) async {
   ''');
 
   // Índices
+  await db.execute('CREATE INDEX idx_materias_nombre ON materias(nombre);');
+
   await db.execute(
     'CREATE INDEX idx_estudiantes_curso ON estudiantes(curso_id);',
   );

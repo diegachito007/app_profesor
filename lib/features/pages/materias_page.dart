@@ -3,33 +3,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/controllers/materias_controller.dart';
 import '../../data/models/materia_model.dart';
-import '../../shared/utils/notificaciones.dart'; // ✅ Importación añadida
-import '../../shared/utils/showdialogs.dart'; // ✅ Importación del diálogo reutilizable
+import '../../shared/utils/notificaciones.dart';
+import '../../shared/utils/showdialogs.dart';
 
-final filtroMateriasProvider = StateProvider<String>((ref) => '');
-
-class MateriasPage extends ConsumerWidget {
+class MateriasPage extends ConsumerStatefulWidget {
   const MateriasPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final filtro = ref.watch(filtroMateriasProvider);
-    final materiasAsync = ref.watch(materiasControllerProvider);
+  ConsumerState<MateriasPage> createState() => _MateriasPageState();
+}
 
-    final materiasFiltradasAsync = materiasAsync.whenData((materias) {
-      if (filtro.isEmpty) return materias;
-      return materias
-          .where((m) => m.nombre.toLowerCase().contains(filtro.toLowerCase()))
-          .toList();
-    });
+class _MateriasPageState extends ConsumerState<MateriasPage> {
+  String _filtro = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final materiasAsync = ref.watch(materiasControllerProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Materias')),
-      body: materiasFiltradasAsync.when(
+      body: materiasAsync.when(
         data: (materias) {
-          if (materias.isEmpty) {
-            return const Center(child: Text('No hay materias registradas.'));
-          }
+          final materiasFiltradas = materias
+              .where(
+                (m) => m.nombre.toLowerCase().contains(_filtro.toLowerCase()),
+              )
+              .toList();
 
           return Column(
             children: [
@@ -39,91 +38,108 @@ class MateriasPage extends ConsumerWidget {
                   decoration: InputDecoration(
                     hintText: 'Buscar materia...',
                     prefixIcon: const Icon(Icons.search),
-                    suffixIcon: filtro.isNotEmpty
+                    suffixIcon: _filtro.isNotEmpty
                         ? IconButton(
                             icon: const Icon(Icons.clear),
-                            onPressed: () =>
-                                ref
-                                        .read(filtroMateriasProvider.notifier)
-                                        .state =
-                                    '',
+                            onPressed: () => setState(() => _filtro = ''),
                           )
                         : null,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade400),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade400),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
                     ),
                   ),
-                  onChanged: (value) =>
-                      ref.read(filtroMateriasProvider.notifier).state = value,
+                  onChanged: (value) => setState(() => _filtro = value),
                 ),
               ),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: materias.length,
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemBuilder: (_, i) {
-                    final materia = materias[i];
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 4,
-                      ),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: Colors.grey.shade300),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withAlpha(
-                                (0.03 * 255).round(),
-                              ),
-                              blurRadius: 3,
-                              offset: const Offset(0, 1.5),
-                            ),
-                          ],
-                        ),
+              if (materiasFiltradas.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Center(child: Text('No se encontraron materias.')),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: materiasFiltradas.length,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemBuilder: (_, i) {
+                      final materia = materiasFiltradas[i];
+                      return Padding(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 8,
+                          horizontal: 16,
+                          vertical: 4,
                         ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                materia.nombre,
-                                style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                  color: Colors.black87,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade100,
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.grey.shade300),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(8),
+                                blurRadius: 3,
+                                offset: const Offset(0, 1.5),
+                              ),
+                            ],
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 8,
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  materia.nombre,
+                                  style: const TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w500,
+                                    color: Colors.black87,
+                                  ),
                                 ),
                               ),
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.edit,
-                                color: Colors.blueGrey,
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.edit,
+                                  color: Colors.blueGrey,
+                                ),
+                                tooltip: 'Editar materia',
+                                onPressed: () => _mostrarDialogoMateria(
+                                  context: context,
+                                  ref: ref,
+                                  materia: materia,
+                                ),
                               ),
-                              tooltip: 'Editar materia',
-                              onPressed: () =>
-                                  _mostrarDialogoEditar(context, ref, materia),
-                            ),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.delete,
-                                color: Colors.redAccent,
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete,
+                                  color: Colors.redAccent,
+                                ),
+                                tooltip: 'Eliminar materia',
+                                onPressed: () => _confirmarEliminacion(
+                                  context,
+                                  ref,
+                                  materia,
+                                ),
                               ),
-                              tooltip: 'Eliminar materia',
-                              onPressed: () =>
-                                  _confirmarEliminacion(context, ref, materia),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                    );
-                  },
+                      );
+                    },
+                  ),
                 ),
-              ),
             ],
           );
         },
@@ -178,7 +194,8 @@ class MateriasPage extends ConsumerWidget {
             ),
             const SizedBox(width: 16),
             ElevatedButton.icon(
-              onPressed: () => _mostrarDialogoAgregar(context, ref),
+              onPressed: () =>
+                  _mostrarDialogoMateria(context: context, ref: ref),
               icon: const Icon(Icons.add),
               label: const Text('Agregar'),
               style: ElevatedButton.styleFrom(
@@ -194,159 +211,74 @@ class MateriasPage extends ConsumerWidget {
     );
   }
 
-  void _mostrarDialogoAgregar(BuildContext context, WidgetRef ref) {
-    final controller = TextEditingController();
+  void _mostrarDialogoMateria({
+    required BuildContext context,
+    required WidgetRef ref,
+    Materia? materia,
+  }) {
+    final controller = TextEditingController(text: materia?.nombre ?? '');
 
-    showDialog(
+    ShowDialogs.showSimpleFormDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Agregar materia'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: 'Nombre de la materia'),
-          autofocus: true,
+      title: materia == null ? 'Agregar materia' : 'Editar materia',
+      confirmText: materia == null ? 'Guardar' : 'Actualizar',
+      buildContent: (setState) => TextField(
+        controller: controller,
+        decoration: InputDecoration(
+          hintText: 'Nombre de la materia',
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 10,
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final nombre = controller.text.trim();
-              Navigator.pop(context);
-
-              if (nombre.length < 3) {
-                if (context.mounted) {
-                  Notificaciones.showWarning(
-                    context,
-                    'El nombre debe tener al menos 3 caracteres.',
-                  );
-                }
-                return;
-              }
-
-              final materias = ref.read(materiasControllerProvider).value ?? [];
-              final yaExiste = materias.any(
-                (m) => m.nombre.toLowerCase() == nombre.toLowerCase(),
-              );
-
-              if (yaExiste) {
-                if (context.mounted) {
-                  Notificaciones.showWarning(
-                    context,
-                    'La materia "$nombre" ya existe.',
-                  );
-                }
-                return;
-              }
-
-              final nueva = Materia(id: 0, nombre: nombre);
-              try {
-                await ref
-                    .read(materiasControllerProvider.notifier)
-                    .agregarMateria(nueva);
-                if (context.mounted) {
-                  Notificaciones.showSuccess(
-                    context,
-                    'Materia "$nombre" agregada',
-                  );
-                }
-              } catch (_) {
-                if (context.mounted) {
-                  Notificaciones.showError(
-                    context,
-                    'Error al agregar la materia',
-                  );
-                }
-              }
-            },
-            child: const Text('Agregar'),
-          ),
-        ],
+        autofocus: true,
       ),
-    );
-  }
+      onSubmit: (setError) async {
+        final nombre = controller.text.trim();
 
-  void _mostrarDialogoEditar(
-    BuildContext context,
-    WidgetRef ref,
-    Materia materia,
-  ) {
-    final controller = TextEditingController(text: materia.nombre);
+        if (nombre.length < 3) {
+          setError('El nombre debe tener al menos 3 caracteres.');
+          return;
+        }
 
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Editar materia'),
-        content: TextField(
-          controller: controller,
-          decoration: const InputDecoration(hintText: 'Nuevo nombre'),
-          autofocus: true,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final nuevoNombre = controller.text.trim();
-              Navigator.pop(context);
+        final materias = ref.read(materiasControllerProvider).value ?? [];
+        final yaExiste = materias.any(
+          (m) =>
+              m.nombre.toLowerCase() == nombre.toLowerCase() &&
+              m.id != (materia?.id ?? 0),
+        );
 
-              if (nuevoNombre.length < 3) {
-                if (context.mounted) {
-                  Notificaciones.showWarning(
-                    context,
-                    'El nombre debe tener al menos 3 caracteres.',
-                  );
-                }
-                return;
-              }
+        if (yaExiste) {
+          setError('La materia "$nombre" ya existe.');
+          return;
+        }
 
-              if (nuevoNombre == materia.nombre) return;
-
-              final materias = ref.read(materiasControllerProvider).value ?? [];
-              final yaExiste = materias.any(
-                (m) =>
-                    m.id != materia.id &&
-                    m.nombre.toLowerCase() == nuevoNombre.toLowerCase(),
+        try {
+          if (materia == null) {
+            final nueva = Materia(id: 0, nombre: nombre);
+            await ref
+                .read(materiasControllerProvider.notifier)
+                .agregarMateria(nueva);
+            if (context.mounted) {
+              Notificaciones.showSuccess(context, 'Materia "$nombre" agregada');
+            }
+          } else {
+            final actualizada = Materia(id: materia.id, nombre: nombre);
+            await ref
+                .read(materiasControllerProvider.notifier)
+                .actualizarMateria(actualizada);
+            if (context.mounted) {
+              Notificaciones.showSuccess(
+                context,
+                'Materia actualizada a "$nombre"',
               );
-
-              if (yaExiste) {
-                if (context.mounted) {
-                  Notificaciones.showWarning(
-                    context,
-                    'Ya existe una materia con el nombre "$nuevoNombre".',
-                  );
-                }
-                return;
-              }
-
-              final actualizada = Materia(id: materia.id, nombre: nuevoNombre);
-              try {
-                await ref
-                    .read(materiasControllerProvider.notifier)
-                    .actualizarMateria(actualizada);
-                if (context.mounted) {
-                  Notificaciones.showSuccess(
-                    context,
-                    'Materia actualizada a "$nuevoNombre"',
-                  );
-                }
-              } catch (_) {
-                if (context.mounted) {
-                  Notificaciones.showError(
-                    context,
-                    'Error al actualizar la materia',
-                  );
-                }
-              }
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
+            }
+          }
+        } catch (_) {
+          setError('Error al guardar la materia');
+        }
+      },
     );
   }
 

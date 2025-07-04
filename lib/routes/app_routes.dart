@@ -5,7 +5,8 @@ import '../features/license/license.dart';
 import '../features/dashboard/dashboard_page.dart';
 import '../features/pages/periodos_page.dart';
 import '../features/pages/cursos_page.dart';
-import '../features/pages/materias_page.dart'; // 👈 Nuevo import
+import '../features/pages/materias_page.dart';
+import '../features/pages/materias_curso_page.dart'; // 👈 Nuevo import
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -20,8 +21,10 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const PeriodosPage());
       case '/cursos':
         return MaterialPageRoute(builder: (_) => const CursosPage());
-      case '/materias': // 👈 Nueva ruta
+      case '/materias':
         return MaterialPageRoute(builder: (_) => const MateriasPage());
+      case '/materias-curso': // 👈 Nueva ruta
+        return MaterialPageRoute(builder: (_) => const MateriasCursoPage());
       default:
         return MaterialPageRoute(
           builder: (_) =>
