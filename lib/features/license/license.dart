@@ -13,25 +13,28 @@ class LicenciaPage extends StatefulWidget {
 class _LicenciaPageState extends State<LicenciaPage> {
   final TextEditingController _controller = TextEditingController();
   bool _loading = false;
-  String? _mensajeError;
-  String? _mensajeExito;
+  String? _mensaje;
   final Logger logger = Logger();
   final SupabaseClient supabase = Supabase.instance.client;
 
   Future<void> _validarLicencia() async {
+    final codigo = _controller.text.trim();
+
+    if (codigo.isEmpty) {
+      setState(() => _mensaje = 'Por favor ingresa un código.');
+      return;
+    }
+
     setState(() {
       _loading = true;
-      _mensajeError = null;
-      _mensajeExito = null;
+      _mensaje = null;
     });
-
-    final licencia = _controller.text.trim();
 
     try {
       final response = await supabase
           .from('licencias')
           .select('nombre')
-          .eq('codigo', licencia)
+          .eq('codigo', codigo)
           .limit(1)
           .maybeSingle();
 
@@ -39,30 +42,27 @@ class _LicenciaPageState extends State<LicenciaPage> {
 
       if (response != null) {
         final nombre = response['nombre'] as String;
-        await LicenseStorage.guardarLicencia(licencia, nombre);
-
-        if (!mounted) return;
+        await LicenseStorage.guardarLicencia(codigo, nombre);
 
         setState(() {
-          _mensajeExito = "Validación correcta. Bienvenido, $nombre";
+          _mensaje = '✅ Licencia válida. Bienvenido, $nombre.';
         });
 
-        // Navegar directamente al dashboard
-        Navigator.pushReplacementNamed(context, '/dashboard');
-      } else {
+        await Future.delayed(const Duration(milliseconds: 800));
+
         if (mounted) {
-          setState(() {
-            _mensajeError = 'Licencia inválida, intenta de nuevo.';
-          });
+          Navigator.pushReplacementNamed(context, '/dashboard');
         }
+      } else {
+        setState(() {
+          _mensaje = '❌ Licencia inválida. Intenta de nuevo.';
+        });
       }
     } catch (e) {
-      logger.e('Error de conexión con Supabase: $e');
-      if (mounted) {
-        setState(() {
-          _mensajeError = 'Error al conectar con Supabase';
-        });
-      }
+      logger.e('Error al validar licencia: $e');
+      setState(() {
+        _mensaje = '⚠️ Error al conectar con Supabase.';
+      });
     }
 
     if (mounted) setState(() => _loading = false);
@@ -70,39 +70,53 @@ class _LicenciaPageState extends State<LicenciaPage> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('✅ LicenciaPage build ejecutado');
     return Scaffold(
       appBar: AppBar(title: const Text("Activar Licencia")),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text(
+              'Ingrese su código de licencia:',
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 12),
             TextField(
               controller: _controller,
               decoration: const InputDecoration(
-                labelText: "Ingrese su licencia",
+                labelText: "Licencia",
+                border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 20),
-            if (_mensajeError != null)
-              Text(_mensajeError!, style: const TextStyle(color: Colors.red)),
-            if (_mensajeExito != null)
+            if (_mensaje != null)
               Text(
-                _mensajeExito!,
-                style: const TextStyle(
-                  color: Colors.green,
+                _mensaje!,
+                style: TextStyle(
+                  color: _mensaje!.startsWith('✅')
+                      ? Colors.green
+                      : _mensaje!.startsWith('⚠️')
+                      ? Colors.orange
+                      : Colors.red,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _loading ? null : _validarLicencia,
-              child: _loading
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Text("Validar"),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.verified),
+                onPressed: _loading ? null : _validarLicencia,
+                label: _loading
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text("Validar"),
+              ),
             ),
           ],
         ),

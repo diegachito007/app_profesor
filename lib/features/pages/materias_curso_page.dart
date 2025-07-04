@@ -41,31 +41,11 @@ class MateriasCursoPage extends ConsumerWidget {
           );
         }
 
-        return Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              color: Colors.grey.shade100,
-              child: Text(
-                'Periodo: ${periodo.nombre}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: activos.length,
-                itemBuilder: (context, index) =>
-                    _buildCursoCard(context, ref, activos[index], index),
-              ),
-            ),
-          ],
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: activos.length,
+          itemBuilder: (context, index) =>
+              _buildCursoCard(context, ref, activos[index], index),
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),

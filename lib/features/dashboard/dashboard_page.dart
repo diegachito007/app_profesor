@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
+
+import '../../data/providers/periodo_activo_provider.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -42,21 +45,45 @@ class DashboardPage extends StatelessWidget {
   Widget _buildPeriodosCard(BuildContext context) {
     return GestureDetector(
       onTap: () => Navigator.pushNamed(context, '/periodos'),
-      child: Card(
-        elevation: 8,
-        color: Colors.cyan.shade400,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        child: const ListTile(
-          leading: Icon(Icons.date_range, color: Colors.white, size: 40),
-          title: Text(
-            "Períodos Académicos",
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-          ),
-          subtitle: Text(
-            "Gestiona los períodos activos",
-            style: TextStyle(color: Colors.white70),
-          ),
-        ),
+      child: Consumer(
+        builder: (context, ref, _) {
+          final periodoActivo = ref.watch(periodoActivoProvider);
+          final tieneActivo = periodoActivo != null;
+
+          final cardColor = tieneActivo
+              ? Colors.green.shade400
+              : Colors.cyan.shade400;
+
+          final subtitleText = tieneActivo
+              ? 'Activo: ${periodoActivo.nombre}'
+              : 'Gestiona los períodos activos';
+
+          return Card(
+            elevation: 8,
+            color: cardColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: ListTile(
+              leading: const Icon(
+                Icons.date_range,
+                color: Colors.white,
+                size: 40,
+              ),
+              title: const Text(
+                "Períodos Académicos",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: Text(
+                subtitleText,
+                style: const TextStyle(color: Colors.white70),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

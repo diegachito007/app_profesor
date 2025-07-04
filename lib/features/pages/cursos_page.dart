@@ -5,8 +5,8 @@ import '../../data/controllers/cursos_controller.dart';
 import '../../data/models/periodo_model.dart';
 import '../../data/models/curso_model.dart';
 import '../../data/providers/periodo_activo_provider.dart';
-import '../../shared/utils/showdialogs.dart';
 import '../../shared/utils/notificaciones.dart';
+import '../../shared/utils/dialogo_confirmacion.dart';
 
 import 'agregar_cursos_page.dart';
 
@@ -210,13 +210,19 @@ class _CursosPageState extends ConsumerState<CursosPage> {
               ),
               tooltip: curso.activo ? 'Archivar' : 'Restaurar',
               onPressed: () async {
-                final confirmado = await ShowDialogs.showArchiveConfirmation(
+                final confirmado = await mostrarDialogoConfirmacion(
                   context: context,
-                  entityName: 'curso',
-                  itemLabel: curso.nombreCompleto,
-                  archivar: curso.activo,
+                  titulo: curso.activo ? 'Archivar curso' : 'Restaurar curso',
+                  mensaje:
+                      '¿Estás seguro de que deseas ${curso.activo ? 'archivar' : 'restaurar'} el curso "${curso.nombreCompleto}"?',
+                  textoConfirmar: curso.activo ? 'Archivar' : 'Restaurar',
+                  colorConfirmar: curso.activo ? Colors.blueGrey : Colors.green,
+                  icono: curso.activo
+                      ? Icons.archive_outlined
+                      : Icons.unarchive_outlined,
                 );
-                if (confirmado == true) {
+
+                if (confirmado) {
                   await ref
                       .read(cursosControllerProvider.notifier)
                       .archivarCurso(curso.id);
@@ -233,12 +239,17 @@ class _CursosPageState extends ConsumerState<CursosPage> {
               icon: const Icon(Icons.delete, color: Colors.redAccent),
               tooltip: 'Eliminar curso',
               onPressed: () async {
-                final confirmado = await ShowDialogs.showDeleteConfirmation(
+                final confirmado = await mostrarDialogoConfirmacion(
                   context: context,
-                  entityName: 'curso',
-                  itemLabel: curso.nombreCompleto,
+                  titulo: 'Eliminar curso',
+                  mensaje:
+                      '¿Estás seguro de que deseas eliminar el curso "${curso.nombreCompleto}"?',
+                  textoConfirmar: 'Eliminar',
+                  colorConfirmar: Colors.redAccent,
+                  icono: Icons.warning_amber_rounded,
                 );
-                if (confirmado == true) {
+
+                if (confirmado) {
                   final exito = await ref
                       .read(cursosControllerProvider.notifier)
                       .eliminarCurso(curso.id);

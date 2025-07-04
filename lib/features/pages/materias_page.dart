@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/controllers/materias_controller.dart';
 import '../../data/models/materia_model.dart';
 import '../../shared/utils/notificaciones.dart';
-import '../../shared/utils/showdialogs.dart';
+import '../../shared/utils/dialogo_confirmacion.dart';
 
 class MateriasPage extends ConsumerStatefulWidget {
   const MateriasPage({super.key});
@@ -217,67 +217,102 @@ class _MateriasPageState extends ConsumerState<MateriasPage> {
     Materia? materia,
   }) {
     final controller = TextEditingController(text: materia?.nombre ?? '');
+    String? error;
 
-    ShowDialogs.showSimpleFormDialog(
+    showDialog(
       context: context,
-      title: materia == null ? 'Agregar materia' : 'Editar materia',
-      confirmText: materia == null ? 'Guardar' : 'Actualizar',
-      buildContent: (setState) => TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          hintText: 'Nombre de la materia',
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 10,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: Text(materia == null ? 'Agregar materia' : 'Editar materia'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: controller,
+                  decoration: InputDecoration(
+                    hintText: 'Nombre de la materia',
+                    errorText: error,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 10,
+                    ),
+                  ),
+                  autofocus: true,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final nombre = controller.text.trim();
+
+                  if (nombre.length < 3) {
+                    setState(
+                      () =>
+                          error = 'El nombre debe tener al menos 3 caracteres.',
+                    );
+                    return;
+                  }
+
+                  final materias =
+                      ref.read(materiasControllerProvider).value ?? [];
+                  final yaExiste = materias.any(
+                    (m) =>
+                        m.nombre.toLowerCase() == nombre.toLowerCase() &&
+                        m.id != (materia?.id ?? 0),
+                  );
+
+                  if (yaExiste) {
+                    setState(() => error = 'La materia "$nombre" ya existe.');
+                    return;
+                  }
+
+                  try {
+                    if (materia == null) {
+                      final nueva = Materia(id: 0, nombre: nombre);
+                      await ref
+                          .read(materiasControllerProvider.notifier)
+                          .agregarMateria(nueva);
+                      if (context.mounted) {
+                        Notificaciones.showSuccess(
+                          context,
+                          'Materia "$nombre" agregada',
+                        );
+                      }
+                    } else {
+                      final actualizada = Materia(
+                        id: materia.id,
+                        nombre: nombre,
+                      );
+                      await ref
+                          .read(materiasControllerProvider.notifier)
+                          .actualizarMateria(actualizada);
+                      if (context.mounted) {
+                        Notificaciones.showSuccess(
+                          context,
+                          'Materia actualizada a "$nombre"',
+                        );
+                      }
+                    }
+                    if (context.mounted) Navigator.pop(context);
+                  } catch (_) {
+                    setState(() => error = 'Error al guardar la materia');
+                  }
+                },
+                child: Text(materia == null ? 'Guardar' : 'Actualizar'),
+              ),
+            ],
           ),
-        ),
-        autofocus: true,
-      ),
-      onSubmit: (setError) async {
-        final nombre = controller.text.trim();
-
-        if (nombre.length < 3) {
-          setError('El nombre debe tener al menos 3 caracteres.');
-          return;
-        }
-
-        final materias = ref.read(materiasControllerProvider).value ?? [];
-        final yaExiste = materias.any(
-          (m) =>
-              m.nombre.toLowerCase() == nombre.toLowerCase() &&
-              m.id != (materia?.id ?? 0),
         );
-
-        if (yaExiste) {
-          setError('La materia "$nombre" ya existe.');
-          return;
-        }
-
-        try {
-          if (materia == null) {
-            final nueva = Materia(id: 0, nombre: nombre);
-            await ref
-                .read(materiasControllerProvider.notifier)
-                .agregarMateria(nueva);
-            if (context.mounted) {
-              Notificaciones.showSuccess(context, 'Materia "$nombre" agregada');
-            }
-          } else {
-            final actualizada = Materia(id: materia.id, nombre: nombre);
-            await ref
-                .read(materiasControllerProvider.notifier)
-                .actualizarMateria(actualizada);
-            if (context.mounted) {
-              Notificaciones.showSuccess(
-                context,
-                'Materia actualizada a "$nombre"',
-              );
-            }
-          }
-        } catch (_) {
-          setError('Error al guardar la materia');
-        }
       },
     );
   }
@@ -287,13 +322,17 @@ class _MateriasPageState extends ConsumerState<MateriasPage> {
     WidgetRef ref,
     Materia materia,
   ) async {
-    final confirm = await ShowDialogs.showDeleteConfirmation(
+    final confirmado = await mostrarDialogoConfirmacion(
       context: context,
-      entityName: 'materia',
-      itemLabel: materia.nombre,
+      titulo: 'Eliminar materia',
+      mensaje:
+          '¿Estás seguro de que deseas eliminar la materia "${materia.nombre}"?',
+      textoConfirmar: 'Eliminar',
+      colorConfirmar: Colors.redAccent,
+      icono: Icons.warning_amber_rounded,
     );
 
-    if (confirm == true) {
+    if (confirmado) {
       try {
         await ref
             .read(materiasControllerProvider.notifier)

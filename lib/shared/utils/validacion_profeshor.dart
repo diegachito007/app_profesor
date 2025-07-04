@@ -22,7 +22,8 @@ Future<void> iniciarValidacionProfeshor(
       if (!context.mounted) return;
       Navigator.of(context, rootNavigator: true).pop(); // Cierra loader
 
-      showDialog(
+      // Mostrar alerta y esperar confirmación
+      await showDialog(
         context: context,
         builder: (_) => AlertDialog(
           title: const Text('Licencia inválida'),
@@ -36,7 +37,6 @@ Future<void> iniciarValidacionProfeshor(
         ),
       );
 
-      await Future.delayed(const Duration(seconds: 2));
       if (!context.mounted) return;
       Navigator.pushReplacementNamed(context, '/licencia');
       return;
@@ -51,7 +51,7 @@ Future<void> iniciarValidacionProfeshor(
     if (!context.mounted) return;
     Navigator.of(context, rootNavigator: true).pop(); // Cierra loader
 
-    // Mostrar bienvenida
+    // Mostrar bienvenida con progreso
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -65,7 +65,6 @@ Future<void> iniciarValidacionProfeshor(
             LinearProgressIndicator(),
           ],
         ),
-        actions: [], // Opcional para mantener simetría visual
       ),
     );
 

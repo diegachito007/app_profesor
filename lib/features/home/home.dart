@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import '../../shared/utils/arranque.dart';
+import '../../shared/utils/validacion_profeshor.dart';
+import '../../features/license/license_storage.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -14,6 +15,8 @@ class HomePage extends ConsumerStatefulWidget {
 }
 
 class _HomePageState extends ConsumerState<HomePage> {
+  bool _validando = false;
+
   @override
   Widget build(BuildContext context) {
     return PopScope(
@@ -22,6 +25,11 @@ class _HomePageState extends ConsumerState<HomePage> {
         appBar: AppBar(
           title: const Text('Inicio'),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.vpn_key_off),
+              tooltip: 'Borrar licencia',
+              onPressed: () => _confirmarBorradoLicencia(context),
+            ),
             IconButton(
               icon: const Icon(Icons.delete_forever),
               tooltip: 'Borrar base de datos',
@@ -52,7 +60,13 @@ class _HomePageState extends ConsumerState<HomePage> {
                         vertical: 14,
                       ),
                     ),
-                    onPressed: () => iniciarValidacionProfeshor(context, ref),
+                    onPressed: _validando
+                        ? null
+                        : () async {
+                            setState(() => _validando = true);
+                            await iniciarValidacionProfeshor(context, ref);
+                            if (mounted) setState(() => _validando = false);
+                          },
                   ),
                 ),
               ],
@@ -103,6 +117,39 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   );
                 }
+              }
+            },
+            child: const Text('Borrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmarBorradoLicencia(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Borrar licencia'),
+        content: const Text(
+          '¿Deseas borrar la licencia almacenada?\nEsto reiniciará el flujo de validación.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await LicenseStorage.borrarLicencia();
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Licencia eliminada. Reinicia el flujo.'),
+                    backgroundColor: Colors.orange,
+                  ),
+                );
               }
             },
             child: const Text('Borrar'),
