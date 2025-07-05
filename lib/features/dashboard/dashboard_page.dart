@@ -92,7 +92,7 @@ class DashboardPage extends StatelessWidget {
     final items = [
       {"icon": Icons.class_, "title": "Cursos"},
       {"icon": Icons.menu_book, "title": "Materias"},
-      {"icon": Icons.book_outlined, "title": "Mis materias"}, // 👈 Nuevo
+      {"icon": Icons.book_outlined, "title": "Mis materias"},
       {"icon": Icons.group, "title": "Estudiantes"},
       {"icon": Icons.grade, "title": "Notas"},
       {"icon": Icons.checklist, "title": "Asistencia"},
@@ -138,6 +138,9 @@ class DashboardPage extends StatelessWidget {
                   break;
                 case "Mis materias":
                   Navigator.pushNamed(context, '/materias-curso');
+                  break;
+                case "Estudiantes":
+                  Navigator.pushNamed(context, '/estudiantes');
                   break;
                 default:
                   _mostrarMensaje(context, title);

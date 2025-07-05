@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/controllers/materias_controller.dart';
-import '../../data/controllers/materias_curso_controller.dart';
-import '../../shared/utils/notificaciones.dart';
+import '../../../data/controllers/materias_controller.dart';
+import '../../../data/controllers/materias_curso_controller.dart';
+import '../../../shared/utils/notificaciones.dart';
 
 class AgregarMateriasCursoPage extends ConsumerStatefulWidget {
   final int cursoId;

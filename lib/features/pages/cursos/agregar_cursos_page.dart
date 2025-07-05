@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/controllers/cursos_controller.dart';
-import '../../data/models/curso_model.dart';
-import '../../data/providers/periodo_activo_provider.dart';
+import '../../../data/controllers/cursos_controller.dart';
+import '../../../data/models/curso_model.dart';
+import '../../../data/providers/periodo_activo_provider.dart';
 
 class AgregarCursosPage extends ConsumerStatefulWidget {
   const AgregarCursosPage({super.key});

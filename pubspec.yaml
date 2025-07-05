@@ -9,23 +9,45 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+
+  # Estado y arquitectura
   flutter_riverpod: ^2.0.2
+
+  # Base de datos local
   sqflite: ^2.3.0
-  path: ^1.9.0 # ✅ Agregado para manejo de rutas internas
+  path: ^1.9.0
   path_provider: ^2.0.15
+
+  # Persistencia y configuración
   shared_preferences: ^2.2.0
-  logger: ^2.0.2
-  cupertino_icons: ^1.0.8
-  supabase_flutter: ^2.0.0 # Versión actualizada
   flutter_dotenv: ^5.2.1
+
+  # Utilidades
+  logger: ^2.0.2
   intl: ^0.20.2
   collection: ^1.18.0
 
+  # Supabase (backend opcional)
+  supabase_flutter: ^2.0.0
+
+  # Importación y exportación de archivos
+  excel: ^2.0.6
+  file_selector: ^1.0.3
+
+  # Permisos (para Android/iOS)
+  permission_handler: ^11.0.1
+
+  # Iconos y animaciones
+  cupertino_icons: ^1.0.8
+  lottie: ^2.7.0
 
 flutter:
   uses-material-design: true
   assets:
     - assets/images/logo.png
+    - assets/animations/loading.json
+    - assets/animations/success.json
+    - assets/animations/error.json
 
 dev_dependencies:
-  flutter_lints: ^2.0.0 # Agregado para reglas de lint recomendadas
+  flutter_lints: ^2.0.0

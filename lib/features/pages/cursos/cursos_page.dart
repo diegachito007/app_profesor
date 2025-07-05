@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/controllers/cursos_controller.dart';
-import '../../data/models/periodo_model.dart';
-import '../../data/models/curso_model.dart';
-import '../../data/providers/periodo_activo_provider.dart';
-import '../../shared/utils/notificaciones.dart';
-import '../../shared/utils/dialogo_confirmacion.dart';
+import '../../../data/controllers/cursos_controller.dart';
+import '../../../data/models/periodo_model.dart';
+import '../../../data/models/curso_model.dart';
+import '../../../data/providers/periodo_activo_provider.dart';
+import '../../../shared/utils/notificaciones.dart';
+import '../../../shared/utils/dialogo_confirmacion.dart';
 
 import 'agregar_cursos_page.dart';
 

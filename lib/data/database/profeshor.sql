@@ -128,5 +128,4 @@ CREATE INDEX idx_evaluaciones_materia ON evaluaciones(materia_curso_id);
 CREATE INDEX idx_notas_estudiante ON notas(estudiante_id);
 CREATE INDEX idx_asistencias_fecha ON asistencias(fecha, estudiante_id);
 CREATE INDEX idx_visitas_padres_fecha ON visitas_padres(fecha, estudiante_id);
-
 CREATE INDEX idx_materias_nombre ON materias(nombre);

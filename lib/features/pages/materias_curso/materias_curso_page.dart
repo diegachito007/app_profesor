@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/models/curso_model.dart';
-import '../../data/models/periodo_model.dart';
-import '../../data/controllers/cursos_controller.dart';
-import '../../data/controllers/materias_curso_controller.dart';
-import '../../data/controllers/materias_controller.dart';
-import '../../data/providers/periodo_activo_provider.dart';
-import '../../data/models/materia_curso_model.dart';
-import '../../shared/utils/notificaciones.dart';
+import '../../../data/models/curso_model.dart';
+import '../../../data/models/periodo_model.dart';
+import '../../../data/controllers/cursos_controller.dart';
+import '../../../data/controllers/materias_curso_controller.dart';
+import '../../../data/controllers/materias_controller.dart';
+import '../../../data/providers/periodo_activo_provider.dart';
+import '../../../data/models/materia_curso_model.dart';
+import '../../../shared/utils/notificaciones.dart';
 import 'agregar_materias_curso_page.dart';
 
 class MateriasCursoPage extends ConsumerWidget {
