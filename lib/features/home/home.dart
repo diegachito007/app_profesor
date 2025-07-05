@@ -1,5 +1,7 @@
 import 'dart:io';
+import 'package:app_profesor/data/providers/database_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -93,27 +95,53 @@ class _HomePageState extends ConsumerState<HomePage> {
           ElevatedButton(
             onPressed: () async {
               Navigator.pop(context);
-              final dir = await getApplicationDocumentsDirectory();
-              final path = p.join(dir.path, 'profeshor.db');
-              final dbFile = File(path);
 
-              if (await dbFile.exists()) {
-                await dbFile.delete();
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Base de datos eliminada. Reinicia la app.',
+              try {
+                // Cierra la base de datos si está abierta
+                final db = await ref.read(databaseProvider.future);
+                await db.close();
+                debugPrint('📦 Base de datos cerrada correctamente');
+
+                // Elimina el archivo físico
+                final dir = await getApplicationDocumentsDirectory();
+                final path = p.join(dir.path, 'profeshor.db');
+                final dbFile = File(path);
+
+                if (await dbFile.exists()) {
+                  await dbFile.delete();
+                  debugPrint('🗑️ Archivo de base de datos eliminado');
+
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text(
+                          'Base de datos eliminada. Reinicia la app para continuar.',
+                        ),
+                        backgroundColor: Colors.redAccent,
+                        action: SnackBarAction(
+                          label: 'Cerrar app',
+                          textColor: Colors.white,
+                          onPressed: () => SystemNavigator.pop(),
+                        ),
                       ),
-                      backgroundColor: Colors.redAccent,
-                    ),
-                  );
+                    );
+                  }
+                } else {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('No se encontró la base de datos.'),
+                      ),
+                    );
+                  }
                 }
-              } else {
+              } catch (e) {
+                debugPrint('⚠️ Error al borrar la base de datos: $e');
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('No se encontró la base de datos.'),
+                    SnackBar(
+                      content: Text('Error al borrar la base de datos:\n$e'),
+                      backgroundColor: Colors.orange,
                     ),
                   );
                 }

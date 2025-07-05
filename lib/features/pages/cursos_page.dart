@@ -31,6 +31,7 @@ class _CursosPageState extends ConsumerState<CursosPage> {
   @override
   Widget build(BuildContext context) {
     final cursosAsync = ref.watch(cursosControllerProvider);
+    final periodoActivo = ref.watch(periodoActivoProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Cursos')),
@@ -48,7 +49,45 @@ class _CursosPageState extends ConsumerState<CursosPage> {
           final archivados = cursosFiltrados.where((c) => !c.activo).toList();
 
           if (cursos.isEmpty) {
-            return const Center(child: Text('No hay cursos registrados.'));
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'No hay cursos registrados.',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  const SizedBox(height: 12),
+                  if (periodoActivo == null) ...[
+                    const Text(
+                      '⚠️ No existe un período activo.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.pushNamed(context, '/periodos');
+                      },
+                      icon: const Icon(Icons.add_circle_outline),
+                      label: const Text('Crear período ahora'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 14,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            );
           }
 
           return ListView(
@@ -150,12 +189,16 @@ class _CursosPageState extends ConsumerState<CursosPage> {
             ),
             const SizedBox(width: 16),
             ElevatedButton.icon(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AgregarCursosPage()),
-                );
-              },
+              onPressed: periodoActivo == null
+                  ? null
+                  : () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AgregarCursosPage(),
+                        ),
+                      );
+                    },
               icon: const Icon(Icons.add),
               label: const Text('Agregar'),
               style: ElevatedButton.styleFrom(
@@ -257,6 +300,10 @@ class _CursosPageState extends ConsumerState<CursosPage> {
                     if (exito) {
                       Notificaciones.showSuccess(context, 'Curso eliminado');
                     } else {
+                      Notificaciones.showError(
+                        context,
+                        'No se puede eliminar: el curso tiene datos relacionados.',
+                      );
                       Notificaciones.showError(
                         context,
                         'No se puede eliminar: el curso tiene datos relacionados.',
