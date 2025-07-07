@@ -20,6 +20,13 @@ class EstudiantesPage extends ConsumerWidget {
       body: periodo == null
           ? const Center(child: Text('No hay periodo activo.'))
           : cursosAsync.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (e, _) => Center(child: Text('Error: $e')),
               data: (cursos) {
                 final activos = cursos
                     .where((c) => c.activo && c.periodoId == periodo.id)
@@ -31,17 +38,20 @@ class EstudiantesPage extends ConsumerWidget {
                   );
                 }
 
-                return ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: activos.length,
-                  itemBuilder: (context, index) {
-                    final curso = activos[index];
-                    return _buildCursoCard(context, ref, curso, index);
-                  },
+                return AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 500),
+                  switchInCurve: Curves.easeOut,
+                  child: ListView.builder(
+                    key: ValueKey(activos.length),
+                    padding: const EdgeInsets.all(16),
+                    itemCount: activos.length,
+                    itemBuilder: (context, index) {
+                      final curso = activos[index];
+                      return _buildCursoCard(context, ref, curso, index);
+                    },
+                  ),
                 );
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
             ),
     );
   }
@@ -73,6 +83,11 @@ class EstudiantesPage extends ConsumerWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: estudiantesAsync.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (e, _) => Text('Error al cargar estudiantes: $e'),
           data: (estudiantes) {
             final total = estudiantes.length;
 
@@ -129,11 +144,6 @@ class EstudiantesPage extends ConsumerWidget {
               ],
             );
           },
-          loading: () => const Padding(
-            padding: EdgeInsets.all(8),
-            child: LinearProgressIndicator(),
-          ),
-          error: (e, _) => Text('Error al cargar estudiantes: $e'),
         ),
       ),
     );

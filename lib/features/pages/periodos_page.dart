@@ -7,7 +7,6 @@ import '../../data/controllers/periodos_controller.dart';
 import '../../data/models/periodo_model.dart';
 import '../../shared/utils/notificaciones.dart';
 import '../../shared/utils/dialogo_confirmacion.dart';
-import '../../shared/utils/periodo/dialogo_periodo_form.dart';
 
 class PeriodosPage extends ConsumerStatefulWidget {
   const PeriodosPage({super.key});
@@ -18,6 +17,15 @@ class PeriodosPage extends ConsumerStatefulWidget {
 
 class _PeriodosPageState extends ConsumerState<PeriodosPage> {
   String _filtro = '';
+  final TextEditingController _buscadorController = TextEditingController();
+  final FocusNode _buscadorFocus = FocusNode();
+
+  @override
+  void dispose() {
+    _buscadorController.dispose();
+    _buscadorFocus.dispose();
+    super.dispose();
+  }
 
   Future<void> _confirmarEliminacion(Periodo periodo) async {
     final confirmado = await mostrarDialogoConfirmacion(
@@ -43,6 +51,39 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
     }
   }
 
+  void _mostrarFormulario({Periodo? periodo}) {
+    _buscadorFocus.unfocus(); // Oculta teclado si estaba en el buscador
+
+    final controller = ref.read(periodosControllerProvider.notifier);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: _FormularioPeriodo(
+          periodo: periodo,
+          onGuardar: (nombre, inicio, fin) async {
+            if (periodo == null) {
+              await controller.agregarPeriodo(nombre, inicio, fin);
+            } else {
+              await controller.actualizarPeriodo(
+                periodo.id,
+                nombre,
+                inicio,
+                fin,
+              );
+            }
+          },
+          onCerrarDialogo: () {
+            _buscadorFocus.unfocus();
+            Navigator.of(context).pop();
+          },
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final periodosAsync = ref.watch(periodosControllerProvider);
@@ -50,20 +91,15 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
     return Scaffold(
       appBar: AppBar(title: const Text("Períodos")),
       body: periodosAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: CircularProgressIndicator(),
+          ),
+        ),
         error: (e, _) => Center(child: Text("Error: $e")),
         data: (periodos) {
           final controller = ref.read(periodosControllerProvider.notifier);
-
-          if (periodos.isEmpty) {
-            return const Center(
-              child: Text(
-                'No se encontraron períodos.',
-                style: TextStyle(fontSize: 16),
-              ),
-            );
-          }
-
           final filtrados = periodos
               .where(
                 (p) => p.nombre.toLowerCase().contains(_filtro.toLowerCase()),
@@ -79,6 +115,8 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
                   vertical: 8,
                 ),
                 child: TextField(
+                  controller: _buscadorController,
+                  focusNode: _buscadorFocus,
                   decoration: InputDecoration(
                     hintText: 'Buscar período...',
                     prefixIcon: const Icon(Icons.search),
@@ -112,24 +150,11 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
               },
               icon: const Icon(Icons.file_download),
               label: const Text('Exportar'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 14,
-                ),
-              ),
             ),
             ElevatedButton.icon(
-              onPressed: () =>
-                  mostrarDialogoPeriodoForm(context: context, ref: ref),
+              onPressed: () => _mostrarFormulario(),
               icon: const Icon(Icons.add),
               label: const Text('Agregar'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 14,
-                ),
-              ),
             ),
           ],
         ),
@@ -147,7 +172,7 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
           border: Border.all(color: Colors.grey.shade300),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha((0.03 * 255).round()),
+              color: Colors.black.withAlpha(8),
               blurRadius: 3,
               offset: const Offset(0, 1.5),
             ),
@@ -195,11 +220,7 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
                     IconButton(
                       icon: const Icon(Icons.edit, color: Colors.blueGrey),
                       tooltip: 'Editar período',
-                      onPressed: () => mostrarDialogoPeriodoForm(
-                        context: context,
-                        ref: ref,
-                        periodo: periodo,
-                      ),
+                      onPressed: () => _mostrarFormulario(periodo: periodo),
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete, color: Colors.redAccent),
@@ -213,6 +234,283 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _FormularioPeriodo extends ConsumerStatefulWidget {
+  final Periodo? periodo;
+  final Future<void> Function(String nombre, DateTime inicio, DateTime fin)
+  onGuardar;
+  final VoidCallback onCerrarDialogo;
+
+  const _FormularioPeriodo({
+    required this.onGuardar,
+    required this.onCerrarDialogo,
+    this.periodo,
+  });
+
+  @override
+  ConsumerState<_FormularioPeriodo> createState() => _FormularioPeriodoState();
+}
+
+class _FormularioPeriodoState extends ConsumerState<_FormularioPeriodo> {
+  final _formKey = GlobalKey<FormState>();
+  DateTime? _inicio;
+  DateTime? _fin;
+
+  String? _errorInicio;
+  String? _errorFin;
+  String? _errorLogico;
+
+  @override
+  void initState() {
+    super.initState();
+    _inicio = widget.periodo?.inicio;
+    _fin = widget.periodo?.fin;
+  }
+
+  Future<void> _seleccionarFecha(bool esInicio) async {
+    final seleccionada = await showDatePicker(
+      context: context,
+      locale: const Locale('es'),
+      initialDate: DateTime.now(),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+    );
+    if (seleccionada != null) {
+      setState(() {
+        if (esInicio) {
+          _inicio = seleccionada;
+          _errorInicio = null;
+        } else {
+          _fin = seleccionada;
+          _errorFin = null;
+        }
+        _errorLogico = null;
+      });
+    }
+  }
+
+  String get _nombreGenerado {
+    if (_inicio != null && _fin != null) {
+      return '${_inicio!.year}-${_fin!.year}';
+    }
+    return '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              widget.periodo != null ? 'Editar período' : 'Nuevo período',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
+            const SizedBox(height: 16),
+            Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildFechaCampo(
+                    label: 'Fecha de inicio',
+                    fecha: _inicio,
+                    error: _errorInicio,
+                    onTap: () => _seleccionarFecha(true),
+                  ),
+                  _buildFechaCampo(
+                    label: 'Fecha de fin',
+                    fecha: _fin,
+                    error: _errorFin,
+                    onTap: () => _seleccionarFecha(false),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Nombre generado:',
+                      style: TextStyle(color: Colors.grey.shade700),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _nombreGenerado.isNotEmpty ? _nombreGenerado : '—',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  if (_errorLogico != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Card(
+                        color: Colors.orange.shade50,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(color: Colors.orange.shade300),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.orange,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _errorLogico!,
+                                  style: const TextStyle(
+                                    color: Colors.orange,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: widget.onCerrarDialogo,
+                        child: const Text('Cancelar'),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () async {
+                          setState(() {
+                            _errorInicio = _inicio == null
+                                ? 'Campo obligatorio'
+                                : null;
+                            _errorFin = _fin == null
+                                ? 'Campo obligatorio'
+                                : null;
+                            _errorLogico = null;
+                          });
+
+                          if (_inicio == null || _fin == null) return;
+
+                          if (_fin!.isBefore(_inicio!)) {
+                            setState(() {
+                              _errorLogico =
+                                  'La fecha de fin no puede ser anterior a la de inicio';
+                            });
+                            return;
+                          }
+
+                          final nombreGenerado = _nombreGenerado;
+                          final controller = ref.read(
+                            periodosControllerProvider.notifier,
+                          );
+                          final existe = await controller.existeNombrePeriodo(
+                            nombreGenerado,
+                          );
+                          if (!mounted) return;
+
+                          if (existe && widget.periodo == null) {
+                            setState(() {
+                              _errorLogico =
+                                  'Ya existe un período con ese nombre';
+                            });
+                            return;
+                          }
+
+                          await widget.onGuardar(
+                            nombreGenerado,
+                            _inicio!,
+                            _fin!,
+                          );
+                          widget
+                              .onCerrarDialogo(); // ✅ cierra el diálogo y oculta teclado
+                        },
+                        child: Text(
+                          widget.periodo != null ? 'Actualizar' : 'Guardar',
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFechaCampo({
+    required String label,
+    required DateTime? fecha,
+    required String? error,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+            margin: const EdgeInsets.only(bottom: 8),
+            decoration: BoxDecoration(
+              border: Border.all(
+                color: error != null ? Colors.red : Colors.grey.shade400,
+              ),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  fecha != null
+                      ? DateFormat('dd/MM/yyyy').format(fecha)
+                      : 'Seleccionar',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: fecha != null ? Colors.black : Colors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (error != null)
+          Padding(
+            padding: const EdgeInsets.only(left: 4, bottom: 12),
+            child: Text(
+              error,
+              style: const TextStyle(color: Colors.red, fontSize: 12),
+            ),
+          ),
+      ],
     );
   }
 }

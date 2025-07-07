@@ -143,7 +143,12 @@ class _MateriasPageState extends ConsumerState<MateriasPage> {
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const Center(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: CircularProgressIndicator(),
+          ),
+        ),
         error: (e, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,

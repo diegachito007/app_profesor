@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -30,6 +31,16 @@ class ProfeshorApp extends StatelessWidget {
       theme: AppTheme.temaProfeshor,
       initialRoute: '/home',
       onGenerateRoute: AppRouter.generateRoute,
+      locale: const Locale('es'), // Idioma predeterminado: español
+      supportedLocales: const [
+        Locale('es'), // Español
+        Locale('en'), // Inglés (opcional)
+      ],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
     );
   }
 }

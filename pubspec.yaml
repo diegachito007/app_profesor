@@ -41,6 +41,13 @@ dependencies:
   cupertino_icons: ^1.0.8
   lottie: ^2.7.0
 
+  # Navegación y enlaces
+  url_launcher: ^6.2.1
+
+  # Localización
+  flutter_localizations:
+    sdk: flutter
+
 flutter:
   uses-material-design: true
   assets:
