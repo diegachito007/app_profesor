@@ -46,4 +46,9 @@ class MateriasController extends AsyncNotifier<List<Materia>> {
       return service.obtenerTodas();
     });
   }
+
+  Future<bool> existeNombreMateria(String nombre) async {
+    final materias = state.value ?? [];
+    return materias.any((m) => m.nombre.toLowerCase() == nombre.toLowerCase());
+  }
 }

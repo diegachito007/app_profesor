@@ -52,7 +52,7 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
   }
 
   void _mostrarFormulario({Periodo? periodo}) {
-    _buscadorFocus.unfocus(); // Oculta teclado si estaba en el buscador
+    _buscadorFocus.unfocus();
 
     final controller = ref.read(periodosControllerProvider.notifier);
 
@@ -89,6 +89,7 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
     final periodosAsync = ref.watch(periodosControllerProvider);
 
     return Scaffold(
+      backgroundColor: Colors.white, // Fondo blanco puro
       appBar: AppBar(title: const Text("Períodos")),
       body: periodosAsync.when(
         loading: () => const Center(
@@ -106,10 +107,11 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
               )
               .toList();
 
-          return ListView(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+          return Column(
             children: [
-              Padding(
+              // 🔍 Buscador sin sombra
+              Container(
+                color: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 8,
@@ -128,13 +130,23 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
                   onChanged: (value) => setState(() => _filtro = value),
                 ),
               ),
-              if (filtrados.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Center(child: Text('No se encontraron períodos.')),
-                ),
-              ...filtrados.map((p) => _buildPeriodoTile(p, controller)),
-              const SizedBox(height: 100),
+
+              // 📋 Lista scrollable
+              Expanded(
+                child: filtrados.isEmpty
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: Text('No se encontraron períodos.'),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: filtrados.length,
+                        itemBuilder: (_, index) =>
+                            _buildPeriodoTile(filtrados[index], controller),
+                      ),
+              ),
             ],
           );
         },
@@ -442,8 +454,7 @@ class _FormularioPeriodoState extends ConsumerState<_FormularioPeriodo> {
                             _inicio!,
                             _fin!,
                           );
-                          widget
-                              .onCerrarDialogo(); // ✅ cierra el diálogo y oculta teclado
+                          widget.onCerrarDialogo();
                         },
                         child: Text(
                           widget.periodo != null ? 'Actualizar' : 'Guardar',
