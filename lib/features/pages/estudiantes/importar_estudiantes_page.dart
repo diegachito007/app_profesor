@@ -90,7 +90,8 @@ class ImportarEstudiantesPage extends ConsumerWidget {
                     leading: const Icon(Icons.person_outline),
                     title: Text('${est.apellido} ${est.nombre}'),
                     subtitle: Text(
-                      'Cédula: ${est.cedula}  •  Tel: ${est.telefono}',
+                      'Cédula: ${est.cedula}\nTeléfono: ${est.telefono}',
+                      style: const TextStyle(height: 1.4),
                     ),
                   );
                 },
@@ -192,6 +193,11 @@ class ImportarEstudiantesPage extends ConsumerWidget {
   Future<void> _generarYCompartirPlantilla(BuildContext context) async {
     final excel = Excel.createExcel();
     final sheet = excel['Estudiantes'];
+
+    if (excel.sheets.keys.contains('Sheet1')) {
+      excel.delete('Sheet1');
+    }
+
     sheet.appendRow(['CÉDULA', 'NOMBRES', 'APELLIDOS', 'TELÉFONO']);
 
     final dir = await getApplicationDocumentsDirectory();
@@ -309,7 +315,8 @@ class ImportarEstudiantesPage extends ConsumerWidget {
                           dense: true,
                           title: Text('${est.apellido} ${est.nombre}'),
                           subtitle: Text(
-                            'Cédula: ${est.cedula}  •  Tel: ${est.telefono}',
+                            'Cédula: ${est.cedula}\nTeléfono: ${est.telefono}',
+                            style: const TextStyle(height: 1.4),
                           ),
                         );
                       },
@@ -454,8 +461,38 @@ class ImportarEstudiantesPage extends ConsumerWidget {
     await controller.eliminarTodosLosEstudiantes();
 
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Todos los estudiantes fueron eliminados.')),
+
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        contentPadding: const EdgeInsets.all(24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cleaning_services_rounded,
+              color: Colors.redAccent,
+              size: 64,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '¡Limpieza completada!',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Todos los estudiantes fueron eliminados del curso.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Aceptar'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
