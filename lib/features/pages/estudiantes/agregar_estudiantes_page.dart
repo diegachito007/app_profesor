@@ -44,17 +44,6 @@ class _AgregarEstudiantesPageState
           return Column(
             children: [
               const SizedBox(height: 16),
-              Center(
-                child: Text(
-                  '${widget.curso.nombreCompleto} (${estudiantes.length})',
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: TextField(
@@ -79,16 +68,26 @@ class _AgregarEstudiantesPageState
                         itemCount: estudiantesFiltrados.length,
                         itemBuilder: (_, index) {
                           final est = estudiantesFiltrados[index];
-                          return Card(
-                            margin: const EdgeInsets.symmetric(
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 6,
                             ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: Colors.grey.shade300),
-                            ),
-                            child: Padding(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade300),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withAlpha(
+                                      (0.03 * 255).round(),
+                                    ),
+                                    blurRadius: 3,
+                                    offset: const Offset(0, 1.5),
+                                  ),
+                                ],
+                              ),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
                                 vertical: 8,
@@ -258,7 +257,7 @@ class _AgregarEstudiantesPageState
               onPressed: () {
                 Navigator.pushNamed(
                   context,
-                  '/importar_estudiantes',
+                  '/importar-estudiantes',
                   arguments: widget.curso,
                 );
               },
@@ -302,39 +301,6 @@ class _AgregarEstudiantesPageState
   }
 }
 
-class UppercaseSinTildesFormatter extends TextInputFormatter {
-  static const _tildes = {
-    'á': 'A',
-    'é': 'E',
-    'í': 'I',
-    'ó': 'O',
-    'ú': 'U',
-    'Á': 'A',
-    'É': 'E',
-    'Í': 'I',
-    'Ó': 'O',
-    'Ú': 'U',
-    'ñ': 'Ñ',
-    'Ñ': 'Ñ',
-  };
-
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    String texto = newValue.text;
-    _tildes.forEach((original, reemplazo) {
-      texto = texto.replaceAll(original, reemplazo);
-    });
-    texto = texto.toUpperCase();
-    return TextEditingValue(
-      text: texto,
-      selection: TextSelection.collapsed(offset: texto.length),
-    );
-  }
-}
-
 class _FormularioEstudiante extends ConsumerStatefulWidget {
   final int cursoId;
   final Estudiante? estudiante;
@@ -352,6 +318,7 @@ class _FormularioEstudianteState extends ConsumerState<_FormularioEstudiante> {
   final _nombreCtrl = TextEditingController();
   final _apellidoCtrl = TextEditingController();
   final _telefonoCtrl = TextEditingController();
+  String? _errorLogico;
 
   @override
   void initState() {
@@ -430,78 +397,140 @@ class _FormularioEstudianteState extends ConsumerState<_FormularioEstudiante> {
                         ? 'Debe tener 10 dígitos'
                         : null,
                   ),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        child: const Text('Cancelar'),
-                        onPressed: () {
-                          FocusScope.of(context).unfocus();
-                          Navigator.pop(context);
-                        },
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton(
-                        child: Text(
-                          widget.estudiante != null ? 'Actualizar' : 'Guardar',
-                        ),
-                        onPressed: () async {
-                          if (_formKey.currentState?.validate() ?? false) {
-                            final estudiante = Estudiante(
-                              id: widget.estudiante?.id ?? 0,
-                              cedula: _cedulaCtrl.text.trim(),
-                              nombre: _nombreCtrl.text.trim(),
-                              apellido: _apellidoCtrl.text.trim(),
-                              telefono: _telefonoCtrl.text.trim(),
-                              cursoId: widget.cursoId,
-                            );
-
-                            if (widget.estudiante != null) {
-                              await controller.actualizarEstudiante(estudiante);
-                              if (context.mounted) Navigator.pop(context);
-                            } else {
-                              final existe = await controller.existeCedula(
-                                estudiante.cedula,
-                              );
-                              if (existe) {
-                                if (!context.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Ya existe un estudiante con esa cédula',
-                                    ),
-                                  ),
-                                );
-                                return;
-                              }
-
-                              await controller.agregarEstudiante(estudiante);
-
-                              if (!context.mounted) return;
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('Estudiante guardado'),
-                                ),
-                              );
-
-                              _cedulaCtrl.clear();
-                              _nombreCtrl.clear();
-                              _apellidoCtrl.clear();
-                              _telefonoCtrl.clear();
-                              FocusScope.of(context).unfocus();
-                            }
-                          }
-                        },
-                      ),
-                    ],
-                  ),
                 ],
               ),
+            ),
+            if (_errorLogico != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Card(
+                  color: Colors.orange.shade50,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: Colors.orange.shade300),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.warning_amber_rounded,
+                          color: Colors.orange,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _errorLogico!,
+                            style: const TextStyle(
+                              color: Colors.orange,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  child: const Text('Cancelar'),
+                  onPressed: () {
+                    FocusScope.of(context).unfocus();
+                    Navigator.pop(context);
+                  },
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton(
+                  child: Text(
+                    widget.estudiante != null ? 'Actualizar' : 'Guardar',
+                  ),
+                  onPressed: () async {
+                    if (_formKey.currentState?.validate() ?? false) {
+                      final estudiante = Estudiante(
+                        id: widget.estudiante?.id ?? 0,
+                        cedula: _cedulaCtrl.text.trim(),
+                        nombre: _nombreCtrl.text.trim(),
+                        apellido: _apellidoCtrl.text.trim(),
+                        telefono: _telefonoCtrl.text.trim(),
+                        cursoId: widget.cursoId,
+                      );
+
+                      if (widget.estudiante != null) {
+                        await controller.actualizarEstudiante(estudiante);
+                        if (context.mounted) Navigator.pop(context);
+                      } else {
+                        final existe = await controller.existeCedula(
+                          estudiante.cedula,
+                        );
+                        if (existe) {
+                          if (!context.mounted) return;
+                          FocusScope.of(context).unfocus();
+                          setState(() {
+                            _errorLogico =
+                                'Ya existe un estudiante con esa cédula';
+                          });
+                          return;
+                        }
+
+                        await controller.agregarEstudiante(estudiante);
+
+                        if (!context.mounted) return;
+                        setState(() => _errorLogico = null);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Estudiante guardado')),
+                        );
+
+                        _cedulaCtrl.clear();
+                        _nombreCtrl.clear();
+                        _apellidoCtrl.clear();
+                        _telefonoCtrl.clear();
+                        FocusScope.of(context).unfocus();
+                      }
+                    }
+                  },
+                ),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class UppercaseSinTildesFormatter extends TextInputFormatter {
+  static const _tildes = {
+    'á': 'A',
+    'é': 'E',
+    'í': 'I',
+    'ó': 'O',
+    'ú': 'U',
+    'Á': 'A',
+    'É': 'E',
+    'Í': 'I',
+    'Ó': 'O',
+    'Ú': 'U',
+    'ñ': 'Ñ',
+    'Ñ': 'Ñ',
+  };
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    String texto = newValue.text;
+    _tildes.forEach((original, reemplazo) {
+      texto = texto.replaceAll(original, reemplazo);
+    });
+    texto = texto.toUpperCase();
+    return TextEditingValue(
+      text: texto,
+      selection: TextSelection.collapsed(offset: texto.length),
     );
   }
 }

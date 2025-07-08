@@ -16,7 +16,7 @@ class EstudiantesPage extends ConsumerWidget {
     final cursosAsync = ref.watch(cursosControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Estudiantes')),
+      appBar: AppBar(title: const Text('Grado - Curso')),
       body: periodo == null
           ? const Center(child: Text('No hay periodo activo.'))
           : cursosAsync.when(

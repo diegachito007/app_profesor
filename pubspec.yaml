@@ -44,6 +44,8 @@ dependencies:
   # Navegación y enlaces
   url_launcher: ^6.2.1
 
+  share_plus: ^7.2.1
+
   # Localización
   flutter_localizations:
     sdk: flutter

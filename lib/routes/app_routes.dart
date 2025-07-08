@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 // Páginas principales
+import '../data/models/curso_model.dart';
 import '../features/home/home.dart';
 import '../features/license/license.dart';
 import '../features/dashboard/dashboard_page.dart';
@@ -10,7 +11,8 @@ import '../features/pages/periodos_page.dart';
 import '../features/pages/cursos/cursos_page.dart';
 import '../features/pages/materias_page.dart';
 import '../features/pages/materias_curso/materias_curso_page.dart';
-import '../features/pages/estudiantes/estudiantes_page.dart'; // 👈 Nueva importación
+import '../features/pages/estudiantes/estudiantes_page.dart';
+import '../features/pages/estudiantes/importar_estudiantes_page.dart'; // 👈 Nueva importación
 
 class AppRouter {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -36,8 +38,14 @@ class AppRouter {
       case '/materias-curso':
         return MaterialPageRoute(builder: (_) => const MateriasCursoPage());
 
-      case '/estudiantes': // 👈 Nueva ruta registrada
+      case '/estudiantes':
         return MaterialPageRoute(builder: (_) => const EstudiantesPage());
+
+      case '/importar-estudiantes':
+        final curso = settings.arguments as Curso;
+        return MaterialPageRoute(
+          builder: (_) => ImportarEstudiantesPage(curso: curso),
+        );
 
       default:
         return MaterialPageRoute(
