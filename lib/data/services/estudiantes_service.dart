@@ -65,4 +65,9 @@ class EstudiantesService {
     }
     await batch.commit(noResult: true);
   }
+
+  /// 🧹 Elimina todos los estudiantes de un curso específico
+  Future<void> eliminarTodosDelCurso(int cursoId) async {
+    await db.delete('estudiantes', where: 'curso_id = ?', whereArgs: [cursoId]);
+  }
 }

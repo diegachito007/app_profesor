@@ -77,4 +77,15 @@ class EstudiantesController extends FamilyAsyncNotifier<List<Estudiante>, int> {
       state = AsyncValue.error(e, st);
     }
   }
+
+  Future<void> eliminarTodosLosEstudiantes() async {
+    state = const AsyncValue.loading();
+    try {
+      await _service.eliminarTodosDelCurso(arg); // `arg` es el cursoId
+      final actualizados = await _service.obtenerPorCurso(arg);
+      state = AsyncValue.data(actualizados);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
 }

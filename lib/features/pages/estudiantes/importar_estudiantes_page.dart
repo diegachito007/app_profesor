@@ -22,27 +22,145 @@ class ImportarEstudiantesPage extends ConsumerWidget {
       body: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            ElevatedButton.icon(
-              icon: const Icon(Icons.share),
-              label: const Text('Compartir plantilla'),
-              onPressed: () => _generarYCompartirPlantilla(context),
+            _buildCursoResumen(),
+            const SizedBox(height: 20),
+            Expanded(child: _buildVistaPreviaEstudiantes(ref)),
+            const SizedBox(height: 20),
+            _buildAccionesCard(context, ref),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCursoResumen() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.blue.shade50,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.class_, color: Colors.blue),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              curso.nombreCompleto,
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.upload_file),
-              label: const Text('Cargar estudiantes'),
-              onPressed: () => _cargarArchivo(context, ref, curso.id),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVistaPreviaEstudiantes(WidgetRef ref) {
+    final estudiantesAsync = ref.watch(estudiantesControllerProvider(curso.id));
+
+    return estudiantesAsync.when(
+      data: (estudiantes) {
+        if (estudiantes.isEmpty) {
+          return const Center(
+            child: Text(
+              'No hay estudiantes registrados en este curso.',
+              style: TextStyle(color: Colors.black54),
             ),
-            const SizedBox(height: 16),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.download),
-              label: const Text('Exportar estudiantes'),
-              onPressed: () => _exportarEstudiantes(context, ref, curso.id),
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Estudiantes actuales',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView.separated(
+                itemCount: estudiantes.length,
+                separatorBuilder: (_, __) => const Divider(height: 1),
+                itemBuilder: (_, index) {
+                  final est = estudiantes[index];
+                  return ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.person_outline),
+                    title: Text('${est.apellido} ${est.nombre}'),
+                    subtitle: Text(
+                      'Cédula: ${est.cedula}  •  Tel: ${est.telefono}',
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Error: $e')),
+    );
+  }
+
+  Widget _buildAccionesCard(BuildContext context, WidgetRef ref) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Acciones disponibles',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 12),
+            _buildActionButton(
+              Icons.share,
+              'Compartir plantilla',
+              () => _generarYCompartirPlantilla(context),
+            ),
+            _buildActionButton(
+              Icons.upload_file,
+              'Cargar estudiantes',
+              () => _cargarArchivo(context, ref, curso.id),
+            ),
+            _buildActionButton(
+              Icons.download,
+              'Exportar estudiantes',
+              () => _exportarEstudiantes(context, ref, curso.id),
+            ),
+            _buildActionButton(
+              Icons.delete_forever,
+              'Eliminar todos',
+              () => _confirmarEliminacionMasiva(context, ref, curso.id),
+              color: Colors.redAccent,
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(
+    IconData icon,
+    String label,
+    VoidCallback onPressed, {
+    Color? color,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: ElevatedButton.icon(
+        icon: Icon(icon),
+        label: Text(label),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          minimumSize: const Size.fromHeight(48),
+        ),
+        onPressed: onPressed,
       ),
     );
   }
@@ -230,8 +348,38 @@ class ImportarEstudiantesPage extends ConsumerWidget {
     }
 
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Se importaron $importados estudiantes.')),
+
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        contentPadding: const EdgeInsets.all(24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.check_circle_outline,
+              color: Colors.green,
+              size: 64,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '¡Importación exitosa!',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Se importaron $importados estudiantes correctamente.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Aceptar'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -268,6 +416,47 @@ class ImportarEstudiantesPage extends ConsumerWidget {
     await Share.shareXFiles([
       XFile(file.path),
     ], text: 'Aquí tienes el listado de estudiantes exportado.');
+  }
+
+  Future<void> _confirmarEliminacionMasiva(
+    BuildContext context,
+    WidgetRef ref,
+    int cursoId,
+  ) async {
+    final confirmar =
+        await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('¿Eliminar todos los estudiantes?'),
+            content: const Text(
+              'Esta acción eliminará todos los estudiantes del curso. ¿Deseas continuar?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Eliminar todos'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!confirmar || !context.mounted) return;
+
+    final controller = ref.read(
+      estudiantesControllerProvider(cursoId).notifier,
+    );
+    await controller.eliminarTodosLosEstudiantes();
+
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Todos los estudiantes fueron eliminados.')),
+    );
   }
 
   void _mostrarAlerta(BuildContext context, String mensaje) {
