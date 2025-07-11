@@ -53,36 +53,22 @@ class _CursosPageState extends ConsumerState<CursosPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text(
-                    'No hay cursos registrados.',
-                    style: TextStyle(fontSize: 16),
-                  ),
+                  const Icon(Icons.event_busy, size: 48, color: Colors.grey),
                   const SizedBox(height: 12),
+                  Text(
+                    periodoActivo == null
+                        ? 'No hay período activo.'
+                        : 'No hay cursos registrados.',
+                    style: const TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
                   if (periodoActivo == null) ...[
-                    const Text(
-                      '⚠️ No existe un período activo.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.redAccent,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       onPressed: () {
                         Navigator.pushNamed(context, '/periodos');
                       },
-                      icon: const Icon(Icons.add_circle_outline),
-                      label: const Text('Crear período ahora'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 14,
-                        ),
-                      ),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Crear período'),
                     ),
                   ],
                 ],
@@ -172,22 +158,8 @@ class _CursosPageState extends ConsumerState<CursosPage> {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            ElevatedButton.icon(
-              onPressed: () {
-                // Acción de exportar
-              },
-              icon: const Icon(Icons.file_download),
-              label: const Text('Exportar'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 14,
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
             ElevatedButton.icon(
               onPressed: periodoActivo == null
                   ? null

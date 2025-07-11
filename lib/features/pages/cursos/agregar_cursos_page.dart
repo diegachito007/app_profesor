@@ -38,9 +38,11 @@ class _AgregarCursosPageState extends ConsumerState<AgregarCursosPage> {
 
   Future<void> guardarCursos() async {
     final periodo = ref.read(periodoActivoProvider);
+
     if (nivelSeleccionado == null ||
         paralelosSeleccionados.isEmpty ||
         periodo == null) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Selecciona un nivel y al menos un paralelo'),
@@ -51,19 +53,52 @@ class _AgregarCursosPageState extends ConsumerState<AgregarCursosPage> {
 
     setState(() => _loading = true);
 
-    final nuevosCursos = paralelosSeleccionados.map((p) {
-      return Curso(
-        id: 0,
-        nombre: nivelSeleccionado!,
-        paralelo: p,
-        periodoId: periodo.id,
-        activo: true,
-      );
-    }).toList();
+    final controller = ref.read(cursosControllerProvider.notifier);
+    final cursosExistentes = await controller.obtenerCursosPorPeriodo(
+      periodo.id,
+    );
 
-    await ref
-        .read(cursosControllerProvider.notifier)
-        .agregarCursos(nuevosCursos);
+    final nuevosCursos = <Curso>[];
+
+    for (final p in paralelosSeleccionados) {
+      final yaExiste = cursosExistentes.any(
+        (c) =>
+            c.nombre.trim().toLowerCase() ==
+                nivelSeleccionado!.trim().toLowerCase() &&
+            c.paralelo.toLowerCase() == p.toLowerCase(),
+      );
+
+      if (yaExiste) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'El curso "${nivelSeleccionado!} $p" ya está registrado',
+            ),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+        continue;
+      }
+
+      nuevosCursos.add(
+        Curso(
+          id: 0,
+          nombre: nivelSeleccionado!, // ✅ solo el grado
+          paralelo: p, // ✅ paralelo separado
+          periodoId: periodo.id,
+          activo: true,
+        ),
+      );
+    }
+
+    if (nuevosCursos.isEmpty) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      return;
+    }
+
+    await controller.agregarCursos(nuevosCursos);
 
     if (!mounted) return;
     Navigator.pop(context);

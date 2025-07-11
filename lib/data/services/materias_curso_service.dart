@@ -7,12 +7,17 @@ class MateriasCursoService {
   MateriasCursoService(this.db);
 
   Future<List<MateriaCurso>> obtenerPorCurso(int cursoId) async {
-    final result = await db.query(
-      'materias_curso',
-      where: 'curso_id = ?',
-      whereArgs: [cursoId],
-      orderBy: 'fecha_asignacion DESC',
+    final result = await db.rawQuery(
+      '''
+      SELECT mc.*, m.nombre AS nombre_materia
+      FROM materias_curso mc
+      JOIN materias m ON mc.materia_id = m.id
+      WHERE mc.curso_id = ?
+      ORDER BY mc.fecha_asignacion DESC
+    ''',
+      [cursoId],
     );
+
     return result.map((e) => MateriaCurso.fromMap(e)).toList();
   }
 
@@ -45,5 +50,18 @@ class MateriasCursoService {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<List<MateriaCurso>> obtenerTodasActivas() async {
+    final result = await db.rawQuery('''
+    SELECT mc.*, m.nombre AS nombre_materia, c.nombre AS nombre_curso, c.paralelo AS paralelo
+    FROM materias_curso mc
+    JOIN materias m ON mc.materia_id = m.id
+    JOIN cursos c ON mc.curso_id = c.id
+    WHERE mc.activo = 1
+    ORDER BY c.nombre, m.nombre
+  ''');
+
+    return result.map((e) => MateriaCurso.fromMap(e)).toList();
   }
 }

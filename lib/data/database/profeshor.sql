@@ -122,6 +122,14 @@ CREATE TABLE alertas_enviadas (
   FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE
 );
 
+CREATE TABLE horario_clase (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  dia TEXT NOT NULL,
+  hora INTEGER NOT NULL,
+  grado TEXT NOT NULL,
+  materia TEXT NOT NULL
+);
+
 -- Índices
 CREATE INDEX idx_estudiantes_curso ON estudiantes(curso_id);
 CREATE INDEX idx_evaluaciones_materia ON evaluaciones(materia_curso_id);

@@ -135,9 +135,23 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
               Expanded(
                 child: filtrados.isEmpty
                     ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(24),
-                          child: Text('No se encontraron períodos.'),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.event_busy,
+                              size: 48,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(height: 12),
+                            Text(
+                              'No se encontraron períodos.',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
                         ),
                       )
                     : ListView.builder(
@@ -154,15 +168,8 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            ElevatedButton.icon(
-              onPressed: () {
-                // Acción de exportar
-              },
-              icon: const Icon(Icons.file_download),
-              label: const Text('Exportar'),
-            ),
             ElevatedButton.icon(
               onPressed: () => _mostrarFormulario(),
               icon: const Icon(Icons.add),

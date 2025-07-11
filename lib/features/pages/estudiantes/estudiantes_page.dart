@@ -18,7 +18,7 @@ class EstudiantesPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Grado - Curso')),
       body: periodo == null
-          ? const Center(child: Text('No hay periodo activo.'))
+          ? _buildSinPeriodo(context)
           : cursosAsync.when(
               loading: () => const Center(
                 child: Padding(
@@ -34,7 +34,7 @@ class EstudiantesPage extends ConsumerWidget {
 
                 if (activos.isEmpty) {
                   return const Center(
-                    child: Text('No hay cursos activos en este periodo.'),
+                    child: Text('No hay cursos activos en este período.'),
                   );
                 }
 
@@ -53,6 +53,30 @@ class EstudiantesPage extends ConsumerWidget {
                 );
               },
             ),
+    );
+  }
+
+  Widget _buildSinPeriodo(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.event_busy, size: 48, color: Colors.grey),
+          const SizedBox(height: 12),
+          const Text(
+            'No hay período activo.',
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pushNamed(context, '/periodos');
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Crear período'),
+          ),
+        ],
+      ),
     );
   }
 

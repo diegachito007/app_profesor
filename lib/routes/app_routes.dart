@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 // Páginas principales
-import '../data/models/curso_model.dart';
 import '../features/home/home.dart';
 import '../features/license/license.dart';
 import '../features/dashboard/dashboard_page.dart';
@@ -12,46 +11,71 @@ import '../features/pages/cursos/cursos_page.dart';
 import '../features/pages/materias_page.dart';
 import '../features/pages/materias_curso/materias_curso_page.dart';
 import '../features/pages/estudiantes/estudiantes_page.dart';
-import '../features/pages/estudiantes/importar_estudiantes_page.dart'; // 👈 Nueva importación
+import '../features/pages/horarios/horarios_page.dart';
+import '../features/pages/horarios/editar_horarios_page.dart';
+// import '../features/pages/registro/registro_page.dart';
 
-class AppRouter {
+class AppRoutes {
+  // 🔖 Rutas nombradas
+  static const String home = '/home';
+  static const String licencia = '/licencia';
+  static const String dashboard = '/dashboard';
+
+  static const String periodos = '/periodos';
+  static const String cursos = '/cursos';
+  static const String materias = '/materias';
+  static const String materiasCurso = '/materias-curso';
+  static const String estudiantes = '/estudiantes';
+
+  static const String horario = '/horario';
+  static const String editarHorario = '/editar-horario';
+  // static const String registro = '/registro';
+
+  // 🧭 Generador de rutas
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
-      case '/home':
+      case home:
         return MaterialPageRoute(builder: (_) => const HomePage());
 
-      case '/licencia':
+      case licencia:
         return MaterialPageRoute(builder: (_) => const LicenciaPage());
 
-      case '/dashboard':
+      case dashboard:
         return MaterialPageRoute(builder: (_) => const DashboardPage());
 
-      case '/periodos':
+      case periodos:
         return MaterialPageRoute(builder: (_) => const PeriodosPage());
 
-      case '/cursos':
+      case cursos:
         return MaterialPageRoute(builder: (_) => const CursosPage());
 
-      case '/materias':
+      case materias:
         return MaterialPageRoute(builder: (_) => const MateriasPage());
 
-      case '/materias-curso':
+      case materiasCurso:
         return MaterialPageRoute(builder: (_) => const MateriasCursoPage());
 
-      case '/estudiantes':
+      case estudiantes:
         return MaterialPageRoute(builder: (_) => const EstudiantesPage());
 
-      case '/importar-estudiantes':
-        final curso = settings.arguments as Curso;
-        return MaterialPageRoute(
-          builder: (_) => ImportarEstudiantesPage(curso: curso),
-        );
+      case horario:
+        return MaterialPageRoute(builder: (_) => const HorariosPage());
 
-      default:
+      case editarHorario:
+        final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
-          builder: (_) =>
-              const Scaffold(body: Center(child: Text('Ruta no encontrada'))),
+          builder: (_) => EditarHorariosPage(
+            dia: args['dia'] as String,
+            hora: args['hora'] as int,
+            seleccionada: args['horario'], // opcional: MateriaCurso ya asignada
+          ),
         );
     }
+
+    // 🔒 Ruta por defecto si ninguna coincide
+    return MaterialPageRoute(
+      builder: (_) =>
+          const Scaffold(body: Center(child: Text('Ruta no encontrada'))),
+    );
   }
 }

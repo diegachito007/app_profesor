@@ -30,7 +30,7 @@ class ProfeshorApp extends StatelessWidget {
       title: 'Profeshor',
       theme: AppTheme.temaProfeshor,
       initialRoute: '/home',
-      onGenerateRoute: AppRouter.generateRoute,
+      onGenerateRoute: AppRoutes.generateRoute,
       locale: const Locale('es'), // Idioma predeterminado: español
       supportedLocales: const [
         Locale('es'), // Español

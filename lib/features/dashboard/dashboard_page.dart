@@ -97,6 +97,7 @@ class DashboardPage extends StatelessWidget {
       {"icon": Icons.grade, "title": "Notas"},
       {"icon": Icons.checklist, "title": "Asistencia"},
       {"icon": Icons.insert_chart, "title": "Reportes"},
+      {"icon": Icons.calendar_today, "title": "Mi horario"}, // Nuevo ítem
     ];
 
     final colorMap = {
@@ -107,6 +108,7 @@ class DashboardPage extends StatelessWidget {
       "Notas": Colors.orange.shade300,
       "Asistencia": Colors.pink.shade300,
       "Reportes": Colors.green.shade400,
+      "Mi horario": Colors.blue.shade300, // Color para el nuevo ítem
     };
 
     return GridView.builder(
@@ -141,6 +143,9 @@ class DashboardPage extends StatelessWidget {
                   break;
                 case "Estudiantes":
                   Navigator.pushNamed(context, '/estudiantes');
+                  break;
+                case "Mi horario":
+                  Navigator.pushNamed(context, '/horario');
                   break;
                 default:
                   _mostrarMensaje(context, title);

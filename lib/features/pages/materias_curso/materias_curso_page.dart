@@ -21,8 +21,32 @@ class MateriasCursoPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Mis materias')),
       body: periodoActivo == null
-          ? const Center(child: Text('No hay periodo activo.'))
+          ? _buildSinPeriodo(context)
           : _buildContenido(context, ref, periodoActivo),
+    );
+  }
+
+  Widget _buildSinPeriodo(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.event_busy, size: 48, color: Colors.grey),
+          const SizedBox(height: 12),
+          const Text(
+            'No hay período activo.',
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+          const SizedBox(height: 16),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pushNamed(context, '/periodos');
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Crear período'),
+          ),
+        ],
+      ),
     );
   }
 
@@ -30,14 +54,34 @@ class MateriasCursoPage extends ConsumerWidget {
     final cursosAsync = ref.watch(cursosControllerProvider);
 
     return cursosAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Error al cargar cursos: $e')),
       data: (cursos) {
         final activos = cursos
             .where((c) => c.activo && c.periodoId == periodo.id)
             .toList();
 
         if (activos.isEmpty) {
-          return const Center(
-            child: Text('No hay cursos activos en este periodo.'),
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.school_outlined, size: 48, color: Colors.grey),
+                const SizedBox(height: 12),
+                const Text(
+                  'No hay cursos activos en este período.',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/cursos');
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Crear curso'),
+                ),
+              ],
+            ),
           );
         }
 
@@ -48,8 +92,6 @@ class MateriasCursoPage extends ConsumerWidget {
               _buildCursoCard(context, ref, activos[index], index),
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (e, _) => Center(child: Text('Error al cargar cursos: $e')),
     );
   }
 
@@ -86,12 +128,8 @@ class MateriasCursoPage extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         child: materiasCursoAsync.when(
           data: (materiasCurso) {
-            final activas = materiasCurso
-                .where((mc) => mc.activo == true)
-                .toList();
-            final archivadas = materiasCurso
-                .where((mc) => mc.activo == false)
-                .toList();
+            final activas = materiasCurso.where((mc) => mc.activo).toList();
+            final archivadas = materiasCurso.where((mc) => !mc.activo).toList();
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -215,7 +253,6 @@ class MateriasCursoPage extends ConsumerWidget {
     if (resultado == 'archivar') {
       await controller.desactivar(materiaCurso.id, materiaCurso.cursoId);
       ref.invalidate(materiasCursoControllerProvider(materiaCurso.cursoId));
-
       if (context.mounted) {
         Notificaciones.showSuccess(context, 'Materia archivada del curso');
       }

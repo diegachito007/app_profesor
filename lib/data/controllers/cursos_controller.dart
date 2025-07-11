@@ -19,6 +19,12 @@ class CursosController extends AsyncNotifier<List<Curso>> {
     return service.obtenerCursosPorPeriodo(periodo.id);
   }
 
+  Future<List<Curso>> obtenerCursosPorPeriodo(int periodoId) async {
+    final db = await ref.read(databaseProvider.future);
+    final service = CursosService(db);
+    return service.obtenerCursosPorPeriodo(periodoId);
+  }
+
   Future<void> agregarCursos(List<Curso> nuevos) async {
     state = const AsyncValue.loading();
 

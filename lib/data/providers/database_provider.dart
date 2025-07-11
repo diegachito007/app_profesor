@@ -1,5 +1,3 @@
-import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -9,67 +7,13 @@ final databaseProvider = FutureProvider<Database>((ref) async {
   final dir = await getApplicationDocumentsDirectory();
   final path = p.join(dir.path, 'profeshor.db');
 
-  final exists = await File(path).exists();
   final db = await openDatabase(
     path,
-    version: 4,
+    version: 1,
     onCreate: (db, version) async {
       await _crearTablas(db);
-      debugPrint('✅ Base de datos creada');
-    },
-    onUpgrade: (db, oldVersion, newVersion) async {
-      if (oldVersion < 2) {
-        debugPrint(
-          '🔄 Migrando base de datos de v$oldVersion a v$newVersion...',
-        );
-
-        await db.execute('ALTER TABLE materias RENAME TO materias_old;');
-
-        await db.execute('''
-          CREATE TABLE materias (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nombre TEXT NOT NULL UNIQUE
-          );
-        ''');
-
-        await db.execute('''
-          CREATE TABLE materias_curso (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            curso_id INTEGER NOT NULL,
-            materia_id INTEGER NOT NULL,
-            activo INTEGER DEFAULT 1,
-            fecha_asignacion TEXT NOT NULL,
-            fecha_desactivacion TEXT,
-            FOREIGN KEY (curso_id) REFERENCES cursos(id) ON DELETE CASCADE,
-            FOREIGN KEY (materia_id) REFERENCES materias(id) ON DELETE CASCADE
-          );
-        ''');
-
-        await db.execute('''
-          INSERT INTO materias (nombre)
-          SELECT DISTINCT nombre FROM materias_old;
-        ''');
-
-        await db.execute('''
-          INSERT INTO materias_curso (curso_id, materia_id, activo, fecha_asignacion)
-          SELECT mo.curso_id, m.id, 1, DATE('now')
-          FROM materias_old mo
-          JOIN materias m ON m.nombre = mo.nombre;
-        ''');
-
-        await db.execute('DROP TABLE materias_old;');
-
-        debugPrint('✅ Migración completada');
-      }
-
-      // 👇 Asegura que las materias por defecto se inserten si no existen
-      await _insertarMateriasPorDefecto(db);
     },
   );
-
-  if (exists) {
-    debugPrint('📦 Base de datos cargada desde: $path');
-  }
 
   return db;
 });
@@ -209,9 +153,17 @@ Future<void> _crearTablas(Database db) async {
     );
   ''');
 
-  // Índices
-  await db.execute('CREATE INDEX idx_materias_nombre ON materias(nombre);');
+  await db.execute('''
+    CREATE TABLE horario_clase (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      dia TEXT NOT NULL,
+      hora INTEGER NOT NULL,
+      materia_curso_id INTEGER NOT NULL,
+      FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
+    );
+  ''');
 
+  await db.execute('CREATE INDEX idx_materias_nombre ON materias(nombre);');
   await db.execute(
     'CREATE INDEX idx_estudiantes_curso ON estudiantes(curso_id);',
   );
@@ -228,7 +180,6 @@ Future<void> _crearTablas(Database db) async {
     'CREATE INDEX idx_visitas_padres_fecha ON visitas_padres(fecha, estudiante_id);',
   );
 
-  // 👇 Insertar materias por defecto
   await _insertarMateriasPorDefecto(db);
 }
 
@@ -239,6 +190,7 @@ Future<void> _insertarMateriasPorDefecto(Database db) async {
 
   if (count == 0) {
     const materias = [
+      // Materias troncales comunes (EGB y Bachillerato General)
       'Matemática',
       'Lengua y Literatura',
       'Ciencias Naturales',
@@ -252,15 +204,34 @@ Future<void> _insertarMateriasPorDefecto(Database db) async {
       'Historia',
       'Filosofía',
       'Economía',
+      'Educación para la Ciudadanía',
+      'Emprendimiento y Gestión',
+      'TIC (Tecnologías de la Información y la Comunicación)',
+      'Acompañamiento Integral en el Aula',
+      'Animación a la Lectura',
+      'Orientación Vocacional Profesional',
+
+      // Materias técnicas (Bachillerato Técnico)
+      'Contabilidad',
+      'Electrónica',
+      'Mecánica Automotriz',
+      'Administración',
+      'Servicios Hoteleros',
+      'Desarrollo de Software',
+      'Agropecuaria',
+      'Diseño Gráfico',
+      'Enfermería',
+
+      // Materias del Bachillerato Internacional (BI)
+      'Teoría del Conocimiento (TOK)',
+      'Monografía',
+      'Creatividad, Actividad y Servicio (CAS)',
     ];
 
     for (final nombre in materias) {
       await db.insert('materias', {
         'nombre': nombre,
       }, conflictAlgorithm: ConflictAlgorithm.ignore);
-      debugPrint('📘 Materia insertada: $nombre');
     }
-  } else {
-    debugPrint('ℹ️ Materias ya existentes: $count');
   }
 }

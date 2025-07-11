@@ -697,12 +697,6 @@ class _AgregarEstudiantesPageState
 
       if (!context.mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Plantilla generada. Abriendo opciones...'),
-        ),
-      );
-
       await Share.shareXFiles([
         XFile(file.path),
       ], text: 'Aquí tienes la plantilla para importar estudiantes.');
