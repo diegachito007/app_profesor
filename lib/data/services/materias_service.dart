@@ -11,6 +11,16 @@ class MateriasService {
     return result.map((e) => Materia.fromMap(e)).toList();
   }
 
+  Future<List<Materia>> obtenerPorTipoId(int tipoId) async {
+    final result = await db.query(
+      'materias',
+      where: 'tipo_id = ?',
+      whereArgs: [tipoId],
+      orderBy: 'nombre ASC',
+    );
+    return result.map((e) => Materia.fromMap(e)).toList();
+  }
+
   Future<void> agregar(Materia materia) async {
     await db.insert(
       'materias',

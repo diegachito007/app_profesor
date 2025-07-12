@@ -19,6 +19,12 @@ CREATE TABLE cursos (
   FOREIGN KEY (periodo_id) REFERENCES periodos(id) ON DELETE CASCADE
 );
 
+CREATE TABLE tipos_materia (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nombre TEXT NOT NULL UNIQUE,
+  sigla TEXT NOT NULL UNIQUE
+);
+
 -- Tabla: materias (catálogo general)
 CREATE TABLE materias (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

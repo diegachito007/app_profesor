@@ -17,10 +17,13 @@ class _AgregarCursosPageState extends ConsumerState<AgregarCursosPage> {
   final Set<String> paralelosSeleccionados = {};
   bool _loading = false;
 
-  final Map<String, List<String>> nivelesAgrupados = {
-    'INICIAL': ['Inicial 1', 'Inicial 2'],
-    'EGB': [
-      'Primero EGB',
+  final Map<String, List<String>> nivelesPorTipoMateria = {
+    'Educación Inicial y Preparatoria': [
+      'Inicial 1',
+      'Inicial 2',
+      'Preparatoria',
+    ],
+    'EGB y Bachillerato General': [
       'Segundo EGB',
       'Tercero EGB',
       'Cuarto EGB',
@@ -30,8 +33,12 @@ class _AgregarCursosPageState extends ConsumerState<AgregarCursosPage> {
       'Octavo EGB',
       'Noveno EGB',
       'Décimo EGB',
+      'Primero BGU',
+      'Segundo BGU',
+      'Tercero BGU',
     ],
-    'BGU': ['Primero BGU', 'Segundo BGU', 'Tercero BGU'],
+    'Bachillerato Técnico': ['Primero BT', 'Segundo BT', 'Tercero BT'],
+    'Bachillerato Internacional': ['Primero BI', 'Segundo BI', 'Tercero BI'],
   };
 
   final List<String> paralelos = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
@@ -84,8 +91,8 @@ class _AgregarCursosPageState extends ConsumerState<AgregarCursosPage> {
       nuevosCursos.add(
         Curso(
           id: 0,
-          nombre: nivelSeleccionado!, // ✅ solo el grado
-          paralelo: p, // ✅ paralelo separado
+          nombre: nivelSeleccionado!,
+          paralelo: p,
           periodoId: periodo.id,
           activo: true,
         ),
@@ -113,7 +120,7 @@ class _AgregarCursosPageState extends ConsumerState<AgregarCursosPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ...nivelesAgrupados.entries.map((grupo) {
+            ...nivelesPorTipoMateria.entries.map((grupo) {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

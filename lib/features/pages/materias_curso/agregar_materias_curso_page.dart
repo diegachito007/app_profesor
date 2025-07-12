@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../data/controllers/materias_controller.dart';
 import '../../../data/controllers/materias_curso_controller.dart';
+import '../../../data/models/materia_model.dart';
+import '../../../data/services/cursos_service.dart';
+import '../../../data/services/materias_service.dart';
+import '../../../data/services/materias_tipo_service.dart';
+import '../../../data/providers/database_provider.dart';
 import '../../../shared/utils/notificaciones.dart';
 
 class AgregarMateriasCursoPage extends ConsumerStatefulWidget {
@@ -18,53 +22,168 @@ class AgregarMateriasCursoPage extends ConsumerStatefulWidget {
 class _AgregarMateriasCursoPageState
     extends ConsumerState<AgregarMateriasCursoPage> {
   final Set<int> _seleccionadas = {};
+  late Future<List<Materia>> _materiasFiltradas;
+  String _filtro = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _materiasFiltradas = _filtrarMateriasPorCurso(widget.cursoId);
+  }
+
+  Future<List<Materia>> _filtrarMateriasPorCurso(int cursoId) async {
+    final db = await ref.read(databaseProvider.future);
+    final cursoService = CursosService(db);
+    final tipoService = MateriasTipoService(db);
+    final materiaService = MateriasService(db);
+
+    final curso = await cursoService.obtenerPorId(cursoId);
+    if (curso == null) return [];
+
+    final sigla = _mapearSiglaDesdeCurso(curso.nombre);
+    final tipo = await tipoService.obtenerPorSigla(sigla);
+    if (tipo == null) return [];
+
+    return await materiaService.obtenerPorTipoId(tipo.id);
+  }
+
+  String _mapearSiglaDesdeCurso(String nombreCurso) {
+    final nombre = nombreCurso.toLowerCase();
+
+    if (nombre.contains('inicial') || nombre.contains('preparatoria')) {
+      return 'I';
+    } else if (nombre.contains('bgu') || nombre.contains('egb')) {
+      return 'EGB-BGU';
+    } else if (nombre.contains('bt')) {
+      return 'BT';
+    } else if (nombre.contains('bi')) {
+      return 'BI';
+    }
+
+    return 'EGB-BGU'; // por defecto
+  }
 
   @override
   Widget build(BuildContext context) {
-    final materiasAsync = ref.watch(materiasControllerProvider);
     final asignadasAsync = ref.watch(
       materiasCursoControllerProvider(widget.cursoId),
     );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Asignar materias')),
-      body: materiasAsync.when(
-        data: (todasMaterias) {
+      body: FutureBuilder<List<Materia>>(
+        future: _materiasFiltradas,
+        builder: (_, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          final todasMaterias = snapshot.data!;
           return asignadasAsync.when(
             data: (asignadas) {
-              // ✅ Excluir materias activas y archivadas (activo != null)
               final idsAsignadas = asignadas.map((mc) => mc.materiaId).toSet();
-
               final disponibles = todasMaterias
                   .where((m) => !idsAsignadas.contains(m.id))
                   .toList();
 
-              if (disponibles.isEmpty) {
-                return const Center(
-                  child: Text('Todas las materias ya están asignadas.'),
-                );
-              }
+              final filtradas = disponibles
+                  .where(
+                    (m) =>
+                        m.nombre.toLowerCase().contains(_filtro.toLowerCase()),
+                  )
+                  .toList();
 
-              return ListView.builder(
-                itemCount: disponibles.length,
-                itemBuilder: (_, i) {
-                  final materia = disponibles[i];
-                  final seleccionada = _seleccionadas.contains(materia.id);
+              return Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Buscar materia...',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: _filtro.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(Icons.clear),
+                                onPressed: () => setState(() => _filtro = ''),
+                              )
+                            : null,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onChanged: (value) => setState(() => _filtro = value),
+                    ),
+                  ),
+                  if (filtradas.isEmpty)
+                    const Expanded(
+                      child: Center(
+                        child: Text('Todas las materias ya están asignadas.'),
+                      ),
+                    )
+                  else
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: filtradas.length,
+                        itemBuilder: (_, i) {
+                          final materia = filtradas[i];
+                          final seleccionada = _seleccionadas.contains(
+                            materia.id,
+                          );
 
-                  return CheckboxListTile(
-                    title: Text(materia.nombre),
-                    value: seleccionada,
-                    onChanged: (checked) {
-                      setState(() {
-                        if (checked == true) {
-                          _seleccionadas.add(materia.id);
-                        } else {
-                          _seleccionadas.remove(materia.id);
-                        }
-                      });
-                    },
-                  );
-                },
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                if (seleccionada) {
+                                  _seleccionadas.remove(materia.id);
+                                } else {
+                                  _seleccionadas.add(materia.id);
+                                }
+                              });
+                            },
+                            child: Card(
+                              elevation: 2,
+                              margin: const EdgeInsets.symmetric(vertical: 6),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 12,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        materia.nombre,
+                                        style: const TextStyle(fontSize: 15),
+                                      ),
+                                    ),
+                                    AnimatedSwitcher(
+                                      duration: const Duration(
+                                        milliseconds: 200,
+                                      ),
+                                      child: seleccionada
+                                          ? const Icon(
+                                              Icons.check_circle,
+                                              color: Colors.green,
+                                              key: ValueKey('check'),
+                                            )
+                                          : const SizedBox(
+                                              width: 24,
+                                              key: ValueKey('empty'),
+                                            ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                ],
               );
             },
             loading: () => const Center(child: CircularProgressIndicator()),
@@ -72,14 +191,16 @@ class _AgregarMateriasCursoPageState
                 Center(child: Text('Error al cargar asignaciones: $e')),
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error al cargar materias: $e')),
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.all(16),
         child: ElevatedButton.icon(
           icon: const Icon(Icons.check),
-          label: const Text('Asignar seleccionadas'),
+          label: Text(
+            _seleccionadas.isEmpty
+                ? 'Asignar materias'
+                : 'Asignar (${_seleccionadas.length}) seleccionadas',
+          ),
           onPressed: _seleccionadas.isEmpty
               ? null
               : () async {

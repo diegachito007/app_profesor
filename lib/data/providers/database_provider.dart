@@ -41,9 +41,19 @@ Future<void> _crearTablas(Database db) async {
   ''');
 
   await db.execute('''
+    CREATE TABLE tipos_materia (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL UNIQUE,
+      sigla TEXT NOT NULL UNIQUE
+    );
+  ''');
+
+  await db.execute('''
     CREATE TABLE materias (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      nombre TEXT NOT NULL UNIQUE
+      nombre TEXT NOT NULL UNIQUE,
+      tipo_id INTEGER NOT NULL,
+      FOREIGN KEY (tipo_id) REFERENCES tipos_materia(id) ON DELETE CASCADE
     );
   ''');
 
@@ -180,7 +190,25 @@ Future<void> _crearTablas(Database db) async {
     'CREATE INDEX idx_visitas_padres_fecha ON visitas_padres(fecha, estudiante_id);',
   );
 
+  await _insertarTiposMateria(db);
   await _insertarMateriasPorDefecto(db);
+}
+
+Future<void> _insertarTiposMateria(Database db) async {
+  final tipos = [
+    {'nombre': 'Educación Inicial y Preparatoria', 'sigla': 'I'},
+    {'nombre': 'EGB y Bachillerato General', 'sigla': 'EGB-BGU'},
+    {'nombre': 'Bachillerato Técnico', 'sigla': 'BT'},
+    {'nombre': 'Bachillerato Internacional', 'sigla': 'BI'},
+  ];
+
+  for (final tipo in tipos) {
+    await db.insert(
+      'tipos_materia',
+      tipo,
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
+  }
 }
 
 Future<void> _insertarMateriasPorDefecto(Database db) async {
@@ -189,49 +217,71 @@ Future<void> _insertarMateriasPorDefecto(Database db) async {
   );
 
   if (count == 0) {
-    const materias = [
-      // Materias troncales comunes (EGB y Bachillerato General)
-      'Matemática',
-      'Lengua y Literatura',
-      'Ciencias Naturales',
-      'Estudios Sociales',
-      'Educación Física',
-      'Inglés',
-      'Educación Cultural y Artística',
-      'Física',
-      'Química',
-      'Biología',
-      'Historia',
-      'Filosofía',
-      'Economía',
-      'Educación para la Ciudadanía',
-      'Emprendimiento y Gestión',
-      'TIC (Tecnologías de la Información y la Comunicación)',
-      'Acompañamiento Integral en el Aula',
-      'Animación a la Lectura',
-      'Orientación Vocacional Profesional',
+    final materiasPorTipo = {
+      'I': [
+        'Motricidad',
+        'Lenguaje y Comunicación',
+        'Relaciones Lógico-Matemáticas',
+        'Expresión Artística',
+        'Medio Natural y Cultural',
+        'Destrezas de la Vida Cotidiana',
+        'Juego y Aprendizaje',
+        'Educación Musical',
+      ],
+      'EGB-BGU': [
+        'Matemática',
+        'Lengua y Literatura',
+        'Ciencias Naturales',
+        'Estudios Sociales',
+        'Educación Física',
+        'Inglés',
+        'Educación Cultural y Artística',
+        'Física',
+        'Química',
+        'Biología',
+        'Historia',
+        'Filosofía',
+        'Economía',
+        'Educación para la Ciudadanía',
+        'Emprendimiento y Gestión',
+        'TIC (Tecnologías de la Información y la Comunicación)',
+        'Acompañamiento Integral en el Aula',
+        'Animación a la Lectura',
+        'Orientación Vocacional Profesional',
+      ],
+      'BT': [
+        'Contabilidad',
+        'Electrónica',
+        'Mecánica Automotriz',
+        'Administración',
+        'Servicios Hoteleros',
+        'Desarrollo de Software',
+        'Agropecuaria',
+        'Diseño Gráfico',
+        'Enfermería',
+      ],
+      'BI': [
+        'Teoría del Conocimiento (TOK)',
+        'Monografía',
+        'Creatividad, Actividad y Servicio (CAS)',
+      ],
+    };
 
-      // Materias técnicas (Bachillerato Técnico)
-      'Contabilidad',
-      'Electrónica',
-      'Mecánica Automotriz',
-      'Administración',
-      'Servicios Hoteleros',
-      'Desarrollo de Software',
-      'Agropecuaria',
-      'Diseño Gráfico',
-      'Enfermería',
+    for (final sigla in materiasPorTipo.keys) {
+      final tipoId = Sqflite.firstIntValue(
+        await db.rawQuery('SELECT id FROM tipos_materia WHERE sigla = ?', [
+          sigla,
+        ]),
+      );
 
-      // Materias del Bachillerato Internacional (BI)
-      'Teoría del Conocimiento (TOK)',
-      'Monografía',
-      'Creatividad, Actividad y Servicio (CAS)',
-    ];
-
-    for (final nombre in materias) {
-      await db.insert('materias', {
-        'nombre': nombre,
-      }, conflictAlgorithm: ConflictAlgorithm.ignore);
+      if (tipoId != null) {
+        for (final nombre in materiasPorTipo[sigla]!) {
+          await db.insert('materias', {
+            'nombre': nombre,
+            'tipo_id': tipoId,
+          }, conflictAlgorithm: ConflictAlgorithm.ignore);
+        }
+      }
     }
   }
 }

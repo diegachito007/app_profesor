@@ -3,8 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/controllers/materias_controller.dart';
 import '../../data/models/materia_model.dart';
+import '../../data/models/materia_tipo_model.dart';
+import '../../data/services/materias_tipo_service.dart';
 import '../../shared/utils/notificaciones.dart';
 import '../../shared/utils/dialogo_confirmacion.dart';
+import '../../data/providers/database_provider.dart';
+
+final tiposMateriaProvider = FutureProvider<List<MateriaTipo>>((ref) async {
+  final db = await ref.watch(databaseProvider.future);
+  final service = MateriasTipoService(db);
+  return service.obtenerTipos();
+});
 
 class MateriasPage extends ConsumerStatefulWidget {
   const MateriasPage({super.key});
@@ -14,122 +23,179 @@ class MateriasPage extends ConsumerStatefulWidget {
 }
 
 class _MateriasPageState extends ConsumerState<MateriasPage> {
-  String _filtro = '';
+  String _filtroTexto = '';
+  int? _tipoSeleccionado;
 
   @override
   Widget build(BuildContext context) {
     final materiasAsync = ref.watch(materiasControllerProvider);
+    final tiposAsync = ref.watch(tiposMateriaProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Materias')),
-      body: materiasAsync.when(
-        data: (materias) {
-          final filtradas = materias
-              .where(
-                (m) => m.nombre.toLowerCase().contains(_filtro.toLowerCase()),
-              )
-              .toList();
-
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Buscar materia...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _filtro.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () => setState(() => _filtro = ''),
-                          )
-                        : null,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide(color: Colors.grey.shade400),
-                    ),
-                  ),
-                  onChanged: (value) => setState(() => _filtro = value),
-                ),
-              ),
-              if (filtradas.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Center(child: Text('No se encontraron materias.')),
-                )
-              else
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Row(
+              children: [
                 Expanded(
-                  // ... (importaciones y clase MateriasPage sin cambios)
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: filtradas.length,
-                    itemBuilder: (_, index) {
-                      final materia = filtradas[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade100,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey.shade300),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(
-                                  (0.03 * 255).round(),
-                                ),
-                                blurRadius: 3,
-                                offset: const Offset(0, 1.5),
-                              ),
-                            ],
-                          ),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 10,
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  materia.nombre,
-                                  style: const TextStyle(fontSize: 15),
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.edit,
-                                  color: Colors.blueGrey,
-                                ),
-                                tooltip: 'Editar materia',
-                                onPressed: () => _mostrarDialogoMateria(
-                                  context: context,
-                                  ref: ref,
-                                  materia: materia,
-                                ),
-                              ),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.delete,
-                                  color: Colors.redAccent,
-                                ),
-                                tooltip: 'Eliminar materia',
-                                onPressed: () => _confirmarEliminacion(
-                                  context,
-                                  ref,
-                                  materia,
-                                ),
-                              ),
-                            ],
+                  child: tiposAsync.when(
+                    data: (tipos) => DropdownButtonFormField<int>(
+                      value: _tipoSeleccionado,
+                      items: [
+                        const DropdownMenuItem(
+                          value: null,
+                          child: Text('Todos'),
+                        ),
+                        ...tipos.map(
+                          (tipo) => DropdownMenuItem(
+                            value: tipo.id,
+                            child: Text(tipo.nombre),
                           ),
                         ),
-                      );
-                    },
+                      ],
+                      onChanged: (value) {
+                        setState(() => _tipoSeleccionado = value);
+                        final controller = ref.read(
+                          materiasControllerProvider.notifier,
+                        );
+                        if (value == null) {
+                          controller.build(); // recarga todas
+                        } else {
+                          controller.cargarPorTipo(value);
+                        }
+                      },
+                      decoration: const InputDecoration(
+                        labelText: 'Filtrar por nivel',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    loading: () => const CircularProgressIndicator(),
+                    error: (e, _) => Text('Error: $e'),
                   ),
                 ),
-            ],
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Buscar materia...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _filtroTexto.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () => setState(() => _filtroTexto = ''),
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(color: Colors.grey.shade400),
+                ),
+              ),
+              onChanged: (value) => setState(() => _filtroTexto = value),
+            ),
+          ),
+          Expanded(
+            child: materiasAsync.when(
+              data: (materias) {
+                final tipos = ref.watch(tiposMateriaProvider).value ?? [];
+                final filtradas = materias
+                    .where(
+                      (m) => m.nombre.toLowerCase().contains(
+                        _filtroTexto.toLowerCase(),
+                      ),
+                    )
+                    .toList();
+
+                final agrupadas = <int, List<Materia>>{};
+                for (final materia in filtradas) {
+                  agrupadas.putIfAbsent(materia.tipoId, () => []).add(materia);
+                }
+
+                if (filtradas.isEmpty) {
+                  return const Center(
+                    child: Text('No se encontraron materias.'),
+                  );
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: agrupadas.keys.length,
+                  itemBuilder: (_, index) {
+                    final tipoId = agrupadas.keys.elementAt(index);
+                    final tipo = tipos.firstWhere((t) => t.id == tipoId);
+                    final grupo = agrupadas[tipoId]!;
+
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Text(
+                            tipo.nombre,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blueGrey,
+                            ),
+                          ),
+                        ),
+                        ...grupo.map(
+                          (materia) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 6),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade100,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(child: Text(materia.nombre)),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.edit,
+                                      color: Colors.blueGrey,
+                                    ),
+                                    onPressed: () => _mostrarDialogoMateria(
+                                      context: context,
+                                      ref: ref,
+                                      materia: materia,
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.delete,
+                                      color: Colors.redAccent,
+                                    ),
+                                    onPressed: () => _confirmarEliminacion(
+                                      context,
+                                      ref,
+                                      materia,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Error: $e')),
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -145,25 +211,12 @@ class _MateriasPageState extends ConsumerState<MateriasPage> {
               },
               icon: const Icon(Icons.file_download),
               label: const Text('Exportar'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 14,
-                ),
-              ),
             ),
-            const SizedBox(width: 16),
             ElevatedButton.icon(
               onPressed: () =>
                   _mostrarDialogoMateria(context: context, ref: ref),
               icon: const Icon(Icons.add),
               label: const Text('Agregar'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 14,
-                ),
-              ),
             ),
           ],
         ),
@@ -246,6 +299,7 @@ class _FormularioMateria extends ConsumerStatefulWidget {
 class _FormularioMateriaState extends ConsumerState<_FormularioMateria> {
   final _formKey = GlobalKey<FormState>();
   final _nombreCtrl = TextEditingController();
+  int? _tipoIdSeleccionado;
   String? _errorLogico;
 
   @override
@@ -253,11 +307,13 @@ class _FormularioMateriaState extends ConsumerState<_FormularioMateria> {
     super.initState();
     if (widget.materia != null) {
       _nombreCtrl.text = widget.materia!.nombre;
+      _tipoIdSeleccionado = widget.materia!.tipoId;
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final tiposAsync = ref.watch(tiposMateriaProvider);
     final controller = ref.read(materiasControllerProvider.notifier);
 
     return Padding(
@@ -276,6 +332,44 @@ class _FormularioMateriaState extends ConsumerState<_FormularioMateria> {
               key: _formKey,
               child: Column(
                 children: [
+                  tiposAsync.when(
+                    data: (tipos) => DropdownButtonFormField<int>(
+                      value: _tipoIdSeleccionado,
+                      items: tipos
+                          .map(
+                            (tipo) => DropdownMenuItem(
+                              value: tipo.id,
+                              child: Text(
+                                tipo.nombre,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                ), // texto más pequeño
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (value) => setState(() {
+                        _tipoIdSeleccionado = value;
+                      }),
+                      decoration: InputDecoration(
+                        labelText: 'Nivel',
+                        isDense: true,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide: BorderSide(color: Colors.grey.shade300),
+                        ),
+                      ),
+                      validator: (value) =>
+                          value == null ? 'Selecciona un nivel' : null,
+                    ),
+                    loading: () => const CircularProgressIndicator(),
+                    error: (e, _) => Text('Error al cargar tipos: $e'),
+                  ),
+                  const SizedBox(height: 12),
                   TextFormField(
                     controller: _nombreCtrl,
                     decoration: const InputDecoration(labelText: 'Nombre'),
@@ -292,33 +386,9 @@ class _FormularioMateriaState extends ConsumerState<_FormularioMateria> {
                   if (_errorLogico != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 16),
-                      child: Card(
-                        color: Colors.orange.shade50,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                          side: BorderSide(color: Colors.orange.shade300),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12),
-                          child: Row(
-                            children: [
-                              const Icon(
-                                Icons.warning_amber_rounded,
-                                color: Colors.orange,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  _errorLogico!,
-                                  style: const TextStyle(
-                                    color: Colors.orange,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      child: Text(
+                        _errorLogico!,
+                        style: const TextStyle(color: Colors.orange),
                       ),
                     ),
                   const SizedBox(height: 20),
@@ -327,10 +397,7 @@ class _FormularioMateriaState extends ConsumerState<_FormularioMateria> {
                     children: [
                       TextButton(
                         child: const Text('Cancelar'),
-                        onPressed: () {
-                          FocusScope.of(context).unfocus();
-                          Navigator.pop(context);
-                        },
+                        onPressed: () => Navigator.pop(context),
                       ),
                       const SizedBox(width: 8),
                       ElevatedButton(
@@ -355,6 +422,7 @@ class _FormularioMateriaState extends ConsumerState<_FormularioMateria> {
                             final nuevaMateria = Materia(
                               id: widget.materia?.id ?? 0,
                               nombre: nombre,
+                              tipoId: _tipoIdSeleccionado!,
                             );
 
                             widget.onGuardar(nuevaMateria);

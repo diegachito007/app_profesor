@@ -72,4 +72,18 @@ class CursosService {
     return materiasRelacionadas.isNotEmpty ||
         estudiantesRelacionados.isNotEmpty;
   }
+
+  Future<Curso?> obtenerPorId(int id) async {
+    final result = await db.query(
+      'cursos',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
+
+    if (result.isNotEmpty) {
+      return Curso.fromMap(result.first);
+    }
+    return null;
+  }
 }
