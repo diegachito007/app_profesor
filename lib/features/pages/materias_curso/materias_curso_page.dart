@@ -11,6 +11,8 @@ import '../../../data/models/materia_curso_model.dart';
 import '../../../shared/utils/notificaciones.dart';
 import 'agregar_materias_curso_page.dart';
 
+final materiasExpandidaProvider = StateProvider<Set<int>>((ref) => {});
+
 class MateriasCursoPage extends ConsumerWidget {
   const MateriasCursoPage({super.key});
 
@@ -19,7 +21,20 @@ class MateriasCursoPage extends ConsumerWidget {
     final periodoActivo = ref.watch(periodoActivoProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mis materias')),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1565C0),
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'Materias',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
       body: periodoActivo == null
           ? _buildSinPeriodo(context)
           : _buildContenido(context, ref, periodoActivo),
@@ -28,24 +43,31 @@ class MateriasCursoPage extends ConsumerWidget {
 
   Widget _buildSinPeriodo(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.event_busy, size: 48, color: Colors.grey),
-          const SizedBox(height: 12),
-          const Text(
-            'No hay período activo.',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-          const SizedBox(height: 16),
-          ElevatedButton.icon(
-            onPressed: () {
-              Navigator.pushNamed(context, '/periodos');
-            },
-            icon: const Icon(Icons.add),
-            label: const Text('Crear período'),
-          ),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.calendar_today, size: 48, color: Colors.grey),
+            const SizedBox(height: 12),
+            const Text(
+              'No hay período activo.',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Para asignar materias, primero debes activar un período académico.',
+              style: TextStyle(fontSize: 13, color: Colors.black54),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.pushNamed(context, '/periodos'),
+              icon: const Icon(Icons.add),
+              label: const Text('Crear período'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -63,24 +85,31 @@ class MateriasCursoPage extends ConsumerWidget {
 
         if (activos.isEmpty) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.school_outlined, size: 48, color: Colors.grey),
-                const SizedBox(height: 12),
-                const Text(
-                  'No hay cursos activos en este período.',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton.icon(
-                  onPressed: () {
-                    Navigator.pushNamed(context, '/cursos');
-                  },
-                  icon: const Icon(Icons.add),
-                  label: const Text('Crear curso'),
-                ),
-              ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.school, size: 48, color: Colors.grey),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'No hay cursos registrados.',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Para asignar materias, primero debes registrar al menos un curso.',
+                    style: TextStyle(fontSize: 13, color: Colors.black54),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => Navigator.pushNamed(context, '/cursos'),
+                    icon: const Icon(Icons.add),
+                    label: const Text('Agregar curso'),
+                  ),
+                ],
+              ),
             ),
           );
         }
@@ -88,8 +117,12 @@ class MateriasCursoPage extends ConsumerWidget {
         return ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: activos.length,
-          itemBuilder: (context, index) =>
+          itemBuilder: (context, index) => Column(
+            children: [
               _buildCursoCard(context, ref, activos[index], index),
+              const SizedBox(height: 12),
+            ],
+          ),
         );
       },
     );
@@ -105,163 +138,256 @@ class MateriasCursoPage extends ConsumerWidget {
       materiasCursoControllerProvider(curso.id),
     );
     final materiasCatalogo = ref.watch(materiasControllerProvider).value ?? [];
-
     final materiaMap = {for (var m in materiasCatalogo) m.id: m.nombre};
+    final expandida = ref.watch(materiasExpandidaProvider);
 
-    final cardColors = [
-      Colors.teal.shade50,
-      Colors.indigo.shade50,
-      Colors.orange.shade50,
-      Colors.green.shade50,
-      Colors.purple.shade50,
-      Colors.pink.shade50,
-      Colors.cyan.shade50,
+    final chipColors = [
+      Colors.teal.shade100,
+      Colors.orange.shade100,
+      Colors.purple.shade100,
+      Colors.green.shade100,
+      Colors.pink.shade100,
+      Colors.indigo.shade100,
+      Colors.cyan.shade100,
     ];
-    final backgroundColor = cardColors[index % cardColors.length];
 
-    return Card(
-      elevation: 6,
-      color: backgroundColor,
-      margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: materiasCursoAsync.when(
-          data: (materiasCurso) {
-            final activas = materiasCurso.where((mc) => mc.activo).toList();
-            final archivadas = materiasCurso.where((mc) => !mc.activo).toList();
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.blue.shade100),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: materiasCursoAsync.when(
+        data: (materiasCurso) {
+          final activas = materiasCurso.where((mc) => mc.activo).toList();
+          final archivadas = materiasCurso.where((mc) => !mc.activo).toList();
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      curso.nombreCompleto,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.add_circle_outline),
-                      tooltip: 'Asignar materias a este curso',
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                AgregarMateriasCursoPage(cursoId: curso.id),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Text(
+                  curso.nombreCompleto,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                const SizedBox(height: 8),
-                if (materiasCurso.isEmpty)
-                  const Text('No hay materias asignadas.')
-                else ...[
-                  if (activas.isNotEmpty)
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: activas.map((mc) {
-                        final nombre =
-                            materiaMap[mc.materiaId] ?? 'Materia desconocida';
-                        return Chip(
-                          label: Text(nombre),
-                          backgroundColor: Colors.blue.shade100,
-                          deleteIcon: const Icon(Icons.close),
-                          onDeleted: () =>
-                              _confirmarDesactivacion(context, ref, mc),
-                        );
-                      }).toList(),
-                    ),
-                  if (archivadas.isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    const Text(
-                      'Archivadas:',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: archivadas.map((mc) {
-                        final nombre =
-                            materiaMap[mc.materiaId] ?? 'Materia desconocida';
-                        return Chip(
-                          label: Text(
-                            nombre,
-                            style: const TextStyle(
-                              decoration: TextDecoration.lineThrough,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '${activas.length} activas · ${archivadas.length} archivadas',
+                style: const TextStyle(fontSize: 13, color: Colors.black54),
+              ),
+              const SizedBox(height: 12),
+              if (materiasCurso.isEmpty)
+                const Text('No hay materias asignadas.')
+              else ...[
+                if (activas.isNotEmpty)
+                  Column(
+                    children: List.generate(activas.length, (i) {
+                      final mc = activas[i];
+                      final nombre =
+                          materiaMap[mc.materiaId] ?? 'Materia desconocida';
+                      final color = chipColors[i % chipColors.length];
+                      final isExpanded = expandida.contains(mc.id);
+
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            margin: const EdgeInsets.symmetric(vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              border: Border.all(color: color),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  nombre,
+                                  style: const TextStyle(color: Colors.black87),
+                                ),
+                                const SizedBox(width: 4),
+                                GestureDetector(
+                                  onTap: () {
+                                    final set = {...expandida};
+                                    if (isExpanded) {
+                                      set.remove(mc.id);
+                                    } else {
+                                      set.add(mc.id);
+                                    }
+                                    ref
+                                            .read(
+                                              materiasExpandidaProvider
+                                                  .notifier,
+                                            )
+                                            .state =
+                                        set;
+                                  },
+                                  child: const Icon(
+                                    Icons.more_vert,
+                                    size: 16,
+                                    color: Colors.black45,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          backgroundColor: Colors.grey.shade300,
-                          deleteIcon: const Icon(Icons.restore),
-                          onDeleted: () => _restaurarMateria(context, ref, mc),
-                        );
-                      }).toList(),
-                    ),
-                  ],
+                          if (isExpanded)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 12, top: 4),
+                              child: Row(
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        _archivarMateria(context, ref, mc),
+                                    child: const Text('Archivar'),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  TextButton(
+                                    onPressed: () =>
+                                        _eliminarMateria(context, ref, mc),
+                                    child: const Text('Eliminar'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      final set = {...expandida}..remove(mc.id);
+                                      ref
+                                              .read(
+                                                materiasExpandidaProvider
+                                                    .notifier,
+                                              )
+                                              .state =
+                                          set;
+                                    },
+                                    child: const Text('Cancelar'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      );
+                    }),
+                  ),
+                if (archivadas.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Archivadas:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 6),
+                  Column(
+                    children: archivadas.map((mc) {
+                      final nombre =
+                          materiaMap[mc.materiaId] ?? 'Materia desconocida';
+                      return Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              nombre,
+                              style: const TextStyle(
+                                fontStyle: FontStyle.italic,
+                                color: Colors.black54,
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.restore,
+                                size: 18,
+                                color: Colors.black45,
+                              ),
+                              tooltip: 'Restaurar materia',
+                              onPressed: () =>
+                                  _restaurarMateria(context, ref, mc),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ),
                 ],
               ],
-            );
-          },
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Text('Error al cargar materias: $e'),
-        ),
+              const SizedBox(height: 16),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            AgregarMateriasCursoPage(cursoId: curso.id),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.add),
+                  label: const Text('Agregar materia'),
+                ),
+              ),
+            ],
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Text('Error al cargar materias: $e'),
       ),
     );
   }
 
-  void _confirmarDesactivacion(
+  void _archivarMateria(
     BuildContext context,
     WidgetRef ref,
-    MateriaCurso materiaCurso,
+    MateriaCurso mc,
   ) async {
-    final resultado = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('¿Qué deseas hacer con esta materia?'),
-        content: const Text(
-          'Puedes archivarla para conservar el historial o eliminarla completamente.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, 'cancelar'),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, 'eliminar'),
-            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, 'archivar'),
-            child: const Text('Archivar'),
-          ),
-        ],
-      ),
-    );
-
     final controller = ref.read(
-      materiasCursoControllerProvider(materiaCurso.cursoId).notifier,
+      materiasCursoControllerProvider(mc.cursoId).notifier,
     );
+    await controller.desactivar(mc.id, mc.cursoId);
+    ref.invalidate(materiasCursoControllerProvider(mc.cursoId));
+    ref
+        .read(materiasExpandidaProvider.notifier)
+        .update((s) => s..remove(mc.id));
+    if (context.mounted) {
+      Notificaciones.showSuccess(context, 'Materia archivada del curso');
+    }
+  }
 
-    if (resultado == 'archivar') {
-      await controller.desactivar(materiaCurso.id, materiaCurso.cursoId);
-      ref.invalidate(materiasCursoControllerProvider(materiaCurso.cursoId));
-      if (context.mounted) {
-        Notificaciones.showSuccess(context, 'Materia archivada del curso');
-      }
-    } else if (resultado == 'eliminar') {
-      await controller.eliminar(materiaCurso.id, materiaCurso.cursoId);
-      ref.invalidate(materiasCursoControllerProvider(materiaCurso.cursoId));
-      if (context.mounted) {
-        Notificaciones.showSuccess(context, 'Materia eliminada del curso');
-      }
+  void _eliminarMateria(
+    BuildContext context,
+    WidgetRef ref,
+    MateriaCurso mc,
+  ) async {
+    final controller = ref.read(
+      materiasCursoControllerProvider(mc.cursoId).notifier,
+    );
+    await controller.eliminar(mc.id, mc.cursoId);
+    ref.invalidate(materiasCursoControllerProvider(mc.cursoId));
+    ref
+        .read(materiasExpandidaProvider.notifier)
+        .update((s) => s..remove(mc.id));
+    if (context.mounted) {
+      Notificaciones.showSuccess(context, 'Materia eliminada del curso');
     }
   }
 

@@ -16,6 +16,7 @@ class _AgregarCursosPageState extends ConsumerState<AgregarCursosPage> {
   String? nivelSeleccionado;
   final Set<String> paralelosSeleccionados = {};
   bool _loading = false;
+  List<String> _erroresDuplicados = [];
 
   final Map<String, List<String>> nivelesPorTipoMateria = {
     'Educación Inicial y Preparatoria': [
@@ -50,15 +51,16 @@ class _AgregarCursosPageState extends ConsumerState<AgregarCursosPage> {
         paralelosSeleccionados.isEmpty ||
         periodo == null) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Selecciona un nivel y al menos un paralelo'),
-        ),
-      );
+      setState(() {
+        _erroresDuplicados = ['Selecciona un nivel y al menos un paralelo'];
+      });
       return;
     }
 
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _erroresDuplicados.clear();
+    });
 
     final controller = ref.read(cursosControllerProvider.notifier);
     final cursosExistentes = await controller.obtenerCursosPorPeriodo(
@@ -76,14 +78,8 @@ class _AgregarCursosPageState extends ConsumerState<AgregarCursosPage> {
       );
 
       if (yaExiste) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'El curso "${nivelSeleccionado!} $p" ya está registrado',
-            ),
-            duration: const Duration(seconds: 2),
-          ),
+        _erroresDuplicados.add(
+          'El curso "$nivelSeleccionado $p" ya está registrado',
         );
         continue;
       }
@@ -108,53 +104,94 @@ class _AgregarCursosPageState extends ConsumerState<AgregarCursosPage> {
     await controller.agregarCursos(nuevosCursos);
 
     if (!mounted) return;
-    Navigator.pop(context);
+
+    if (_erroresDuplicados.isEmpty) {
+      Navigator.pop(context);
+    } else {
+      setState(() => _loading = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Agregar Cursos')),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: const Color(0xFF1565C0),
+        elevation: 0,
+        centerTitle: true,
+        title: const Text(
+          'Agregar Cursos',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ...nivelesPorTipoMateria.entries.map((grupo) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    grupo.key,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Colors.black87,
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.blue.shade100),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withAlpha(25),
+                      blurRadius: 3,
+                      offset: const Offset(0, 1),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: grupo.value.map((nivel) {
-                      final seleccionado = nivel == nivelSeleccionado;
-                      return ChoiceChip(
-                        label: Text(nivel),
-                        selected: seleccionado,
-                        onSelected: (_) {
-                          setState(() {
-                            nivelSeleccionado = nivel;
-                            paralelosSeleccionados.clear();
-                          });
-                        },
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 16),
-                ],
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.school, color: Colors.blueGrey),
+                        const SizedBox(width: 8),
+                        Text(
+                          grupo.key,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: grupo.value.map((nivel) {
+                        final seleccionado = nivel == nivelSeleccionado;
+                        return ChoiceChip(
+                          label: Text(nivel),
+                          selected: seleccionado,
+                          onSelected: (_) {
+                            setState(() {
+                              nivelSeleccionado = nivel;
+                              paralelosSeleccionados.clear();
+                              _erroresDuplicados.clear();
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
               );
             }),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             const Text(
               'Selecciona los paralelos:',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -174,11 +211,73 @@ class _AgregarCursosPageState extends ConsumerState<AgregarCursosPage> {
                       } else {
                         paralelosSeleccionados.remove(p);
                       }
+                      _erroresDuplicados.clear();
                     });
                   },
                 );
               }).toList(),
             ),
+            if (_erroresDuplicados.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Card(
+                  color: Colors.orange.shade50,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(color: Colors.orange.shade300),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(
+                              Icons.warning_amber_rounded,
+                              color: Colors.orange,
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Conflictos detectados:',
+                              style: TextStyle(
+                                color: Colors.orange,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        ..._erroresDuplicados.map(
+                          (e) => Padding(
+                            padding: const EdgeInsets.only(bottom: 4),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.error_outline,
+                                  size: 16,
+                                  color: Colors.orange,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    e,
+                                    style: const TextStyle(
+                                      color: Colors.orange,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,

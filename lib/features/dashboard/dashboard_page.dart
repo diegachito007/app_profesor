@@ -90,21 +90,21 @@ class DashboardPage extends StatelessWidget {
 
   Widget _buildGridMenu(BuildContext context) {
     final items = [
-      {"icon": Icons.class_, "title": "Cursos"},
-      {"icon": Icons.menu_book, "title": "Materias"},
+      {"icon": Icons.class_, "title": "Mis Cursos"},
       {"icon": Icons.book_outlined, "title": "Mis materias"},
-      {"icon": Icons.group, "title": "Estudiantes"},
+      {"icon": Icons.group, "title": "Mis Estudiantes"},
+      {"icon": Icons.calendar_today, "title": "Mi horario"},
+      {"icon": Icons.menu_book, "title": "Materias"},
       {"icon": Icons.grade, "title": "Notas"},
       {"icon": Icons.checklist, "title": "Asistencia"},
       {"icon": Icons.insert_chart, "title": "Reportes"},
-      {"icon": Icons.calendar_today, "title": "Mi horario"}, // Nuevo ítem
     ];
 
     final colorMap = {
-      "Cursos": Colors.teal.shade300,
+      "Mis Cursos": Colors.teal.shade300,
       "Materias": Colors.deepPurple.shade300,
       "Mis materias": Colors.blueGrey.shade400,
-      "Estudiantes": Colors.indigo.shade300,
+      "Mis Estudiantes": Colors.indigo.shade300,
       "Notas": Colors.orange.shade300,
       "Asistencia": Colors.pink.shade300,
       "Reportes": Colors.green.shade400,
@@ -132,20 +132,20 @@ class DashboardPage extends StatelessWidget {
           child: InkWell(
             onTap: () {
               switch (title) {
-                case "Cursos":
+                case "Mis Cursos":
                   Navigator.pushNamed(context, '/cursos');
-                  break;
-                case "Materias":
-                  Navigator.pushNamed(context, '/materias');
                   break;
                 case "Mis materias":
                   Navigator.pushNamed(context, '/materias-curso');
                   break;
-                case "Estudiantes":
+                case "Mis Estudiantes":
                   Navigator.pushNamed(context, '/estudiantes');
                   break;
                 case "Mi horario":
                   Navigator.pushNamed(context, '/horario');
+                  break;
+                case "Materias":
+                  Navigator.pushNamed(context, '/materias');
                   break;
                 default:
                   _mostrarMensaje(context, title);

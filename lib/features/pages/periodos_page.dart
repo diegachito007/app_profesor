@@ -17,8 +17,10 @@ class PeriodosPage extends ConsumerStatefulWidget {
 
 class _PeriodosPageState extends ConsumerState<PeriodosPage> {
   String _filtro = '';
+  bool _mostrarBuscador = false;
   final TextEditingController _buscadorController = TextEditingController();
   final FocusNode _buscadorFocus = FocusNode();
+  int? _periodoExpandidoId;
 
   @override
   void dispose() {
@@ -27,33 +29,8 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
     super.dispose();
   }
 
-  Future<void> _confirmarEliminacion(Periodo periodo) async {
-    final confirmado = await mostrarDialogoConfirmacion(
-      context: context,
-      titulo: 'Eliminar período',
-      mensaje:
-          '¿Estás seguro de que deseas eliminar el período "${periodo.nombre}"?',
-      textoConfirmar: 'Eliminar',
-      colorConfirmar: Colors.redAccent,
-      icono: Icons.warning_amber_rounded,
-    );
-
-    if (confirmado) {
-      try {
-        final controller = ref.read(periodosControllerProvider.notifier);
-        await controller.eliminarPeriodo(periodo.id);
-        if (!mounted) return;
-        Notificaciones.showSuccess(context, "Período eliminado correctamente");
-      } catch (e) {
-        if (!mounted) return;
-        Notificaciones.showError(context, "Error al eliminar período: $e");
-      }
-    }
-  }
-
   void _mostrarFormulario({Periodo? periodo}) {
     _buscadorFocus.unfocus();
-
     final controller = ref.read(periodosControllerProvider.notifier);
 
     showDialog(
@@ -84,174 +61,289 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
     );
   }
 
+  Future<void> _confirmarEliminacion(Periodo periodo) async {
+    final confirmado = await mostrarDialogoConfirmacion(
+      context: context,
+      titulo: 'Eliminar período',
+      mensaje: '¿Deseas eliminar el período "${periodo.nombre}"?',
+      textoConfirmar: 'Eliminar',
+      colorConfirmar: Colors.redAccent,
+      icono: Icons.warning_amber_rounded,
+    );
+
+    if (confirmado) {
+      try {
+        final controller = ref.read(periodosControllerProvider.notifier);
+        await controller.eliminarPeriodo(periodo.id);
+        if (!mounted) return;
+        Notificaciones.showSuccess(context, "Período eliminado correctamente");
+      } catch (e) {
+        if (!mounted) return;
+        Notificaciones.showError(context, "Error al eliminar período: $e");
+      }
+    }
+  }
+
+  void _cerrarMenuExpandido() {
+    if (_periodoExpandidoId != null) {
+      setState(() => _periodoExpandidoId = null);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final periodosAsync = ref.watch(periodosControllerProvider);
 
-    return Scaffold(
-      backgroundColor: Colors.white, // Fondo blanco puro
-      appBar: AppBar(title: const Text("Períodos")),
-      body: periodosAsync.when(
-        loading: () => const Center(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: CircularProgressIndicator(),
+    return GestureDetector(
+      onTap: _cerrarMenuExpandido,
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        appBar: AppBar(
+          backgroundColor: const Color(0xFF1565C0),
+          elevation: 0,
+          centerTitle: true,
+          title: const Text(
+            'Períodos',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
           ),
+          iconTheme: const IconThemeData(color: Colors.white),
         ),
-        error: (e, _) => Center(child: Text("Error: $e")),
-        data: (periodos) {
-          final controller = ref.read(periodosControllerProvider.notifier);
-          final filtrados = periodos
-              .where(
-                (p) => p.nombre.toLowerCase().contains(_filtro.toLowerCase()),
-              )
-              .toList();
+        body: periodosAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (e, _) => Center(child: Text("Error: $e")),
+          data: (periodos) {
+            final controller = ref.read(periodosControllerProvider.notifier);
+            final filtrados = periodos
+                .where(
+                  (p) => p.nombre.toLowerCase().contains(_filtro.toLowerCase()),
+                )
+                .toList();
 
-          return Column(
-            children: [
-              // 🔍 Buscador sin sombra
-              Container(
-                color: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                child: TextField(
-                  controller: _buscadorController,
-                  focusNode: _buscadorFocus,
-                  decoration: InputDecoration(
-                    hintText: 'Buscar período...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  ),
-                  onChanged: (value) => setState(() => _filtro = value),
-                ),
-              ),
-
-              // 📋 Lista scrollable
-              Expanded(
-                child: filtrados.isEmpty
-                    ? const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.event_busy,
-                              size: 48,
-                              color: Colors.grey,
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${filtrados.length} período${filtrados.length == 1 ? '' : 's'} registrado${filtrados.length == 1 ? '' : 's'}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.black54,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(
+                              Icons.search,
+                              color: Colors.black54,
                             ),
-                            SizedBox(height: 12),
-                            Text(
-                              'No se encontraron períodos.',
-                              style: TextStyle(
-                                fontSize: 16,
+                            tooltip: 'Buscar período',
+                            onPressed: () => setState(
+                              () => _mostrarBuscador = !_mostrarBuscador,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(
+                              Icons.add_circle,
+                              color: Color(0xFF1565C0),
+                              size: 28,
+                            ),
+                            tooltip: 'Agregar período',
+                            onPressed: () => _mostrarFormulario(),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                if (_mostrarBuscador)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey.shade300),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: TextField(
+                        controller: _buscadorController,
+                        focusNode: _buscadorFocus,
+                        decoration: InputDecoration(
+                          hintText: 'Buscar período...',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: _filtro.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () => setState(() => _filtro = ''),
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                        ),
+                        onChanged: (value) => setState(() => _filtro = value),
+                      ),
+                    ),
+                  ),
+                Expanded(
+                  child: filtrados.isEmpty
+                      ? const Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.event_busy,
+                                size: 48,
                                 color: Colors.grey,
                               ),
-                            ),
-                          ],
+                              SizedBox(height: 12),
+                              Text(
+                                'No se encontraron períodos.',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.all(16),
+                          itemCount: filtrados.length,
+                          itemBuilder: (_, index) =>
+                              _buildPeriodoCard(filtrados[index], controller),
                         ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        itemCount: filtrados.length,
-                        itemBuilder: (_, index) =>
-                            _buildPeriodoTile(filtrados[index], controller),
-                      ),
-              ),
-            ],
-          );
-        },
-      ),
-      bottomNavigationBar: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            ElevatedButton.icon(
-              onPressed: () => _mostrarFormulario(),
-              icon: const Icon(Icons.add),
-              label: const Text('Agregar'),
-            ),
-          ],
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildPeriodoTile(Periodo periodo, PeriodosController controller) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.grey.shade300),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withAlpha(8),
-              blurRadius: 3,
-              offset: const Offset(0, 1.5),
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              periodo.nombre,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 4),
-            Text("Inicio: ${DateFormat('dd/MM/yyyy').format(periodo.inicio)}"),
-            Text("Fin: ${DateFormat('dd/MM/yyyy').format(periodo.fin)}"),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  periodo.estadoLabel,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w500,
-                    color: periodo.activo ? Colors.green : Colors.grey.shade700,
-                  ),
-                ),
-                Row(
+  Widget _buildPeriodoCard(Periodo periodo, PeriodosController controller) {
+    final bool esActivo = periodo.activo;
+
+    final Color fondo = esActivo ? Colors.green.shade50 : Colors.white;
+    final Color borde = esActivo ? Colors.green.shade200 : Colors.blue.shade100;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: fondo,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: borde),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withAlpha(25),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.calendar_month, color: Colors.blueGrey),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (!periodo.activo)
-                      IconButton(
-                        icon: const Icon(Icons.check_circle_outline),
-                        tooltip: 'Activar este período',
-                        onPressed: () async {
-                          await controller.activarPeriodo(periodo.id);
-                          ref.invalidate(cursosControllerProvider);
-                        },
-                      )
-                    else
-                      const IconButton(
-                        icon: Icon(Icons.check_circle, color: Colors.green),
-                        onPressed: null,
-                        tooltip: 'Período activo',
+                    Text(
+                      periodo.nombre,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
                       ),
-                    IconButton(
-                      icon: const Icon(Icons.edit, color: Colors.blueGrey),
-                      tooltip: 'Editar período',
-                      onPressed: () => _mostrarFormulario(periodo: periodo),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.redAccent),
-                      tooltip: 'Eliminar período',
-                      onPressed: () => _confirmarEliminacion(periodo),
+                    const SizedBox(height: 6),
+                    Text(
+                      "Inicio: ${DateFormat('dd/MM/yyyy').format(periodo.inicio)}",
+                    ),
+                    Text(
+                      "Fin: ${DateFormat('dd/MM/yyyy').format(periodo.fin)}",
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      periodo.estadoLabel,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w500,
+                        color: esActivo ? Colors.green : Colors.grey.shade700,
+                      ),
                     ),
                   ],
                 ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.more_vert),
+                onPressed: () {
+                  setState(() {
+                    _periodoExpandidoId = _periodoExpandidoId == periodo.id
+                        ? null
+                        : periodo.id;
+                  });
+                },
+              ),
+            ],
+          ),
+          if (_periodoExpandidoId == periodo.id)
+            Column(
+              children: [
+                const SizedBox(height: 4), // Separación sutil sin línea
+                ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    esActivo ? Icons.check_circle : Icons.check_circle_outline,
+                    color: esActivo ? Colors.green : Colors.grey,
+                  ),
+                  title: Text(esActivo ? 'Período activo' : 'Activar período'),
+                  onTap: esActivo
+                      ? null
+                      : () async {
+                          await controller.activarPeriodo(periodo.id);
+                          ref.invalidate(cursosControllerProvider);
+                          setState(() => _periodoExpandidoId = null);
+                        },
+                ),
+                ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.edit, color: Colors.blueGrey),
+                  title: const Text('Editar'),
+                  onTap: () {
+                    _mostrarFormulario(periodo: periodo);
+                    setState(() => _periodoExpandidoId = null);
+                  },
+                ),
+                ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.redAccent,
+                  ),
+                  title: const Text('Eliminar'),
+                  onTap: () {
+                    _confirmarEliminacion(periodo);
+                    setState(() => _periodoExpandidoId = null);
+                  },
+                ),
               ],
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
@@ -281,12 +373,14 @@ class _FormularioPeriodoState extends ConsumerState<_FormularioPeriodo> {
   String? _errorInicio;
   String? _errorFin;
   String? _errorLogico;
+  bool _activo = false;
 
   @override
   void initState() {
     super.initState();
     _inicio = widget.periodo?.inicio;
     _fin = widget.periodo?.fin;
+    _activo = widget.periodo?.activo ?? false;
   }
 
   Future<void> _seleccionarFecha(bool esInicio) async {
@@ -320,6 +414,8 @@ class _FormularioPeriodoState extends ConsumerState<_FormularioPeriodo> {
 
   @override
   Widget build(BuildContext context) {
+    final controller = ref.read(periodosControllerProvider.notifier);
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: SingleChildScrollView(
@@ -330,7 +426,7 @@ class _FormularioPeriodoState extends ConsumerState<_FormularioPeriodo> {
               widget.periodo != null ? 'Editar período' : 'Nuevo período',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 28),
             Form(
               key: _formKey,
               child: Column(
@@ -349,12 +445,9 @@ class _FormularioPeriodoState extends ConsumerState<_FormularioPeriodo> {
                     onTap: () => _seleccionarFecha(false),
                   ),
                   const SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Nombre generado:',
-                      style: TextStyle(color: Colors.grey.shade700),
-                    ),
+                  Text(
+                    'Nombre generado:',
+                    style: TextStyle(color: Colors.grey.shade700),
                   ),
                   const SizedBox(height: 4),
                   Container(
@@ -376,6 +469,12 @@ class _FormularioPeriodoState extends ConsumerState<_FormularioPeriodo> {
                       ),
                     ),
                   ),
+                  if (widget.periodo != null)
+                    SwitchListTile(
+                      title: const Text('Activar período'),
+                      value: _activo,
+                      onChanged: (value) => setState(() => _activo = value),
+                    ),
                   if (_errorLogico != null)
                     Padding(
                       padding: const EdgeInsets.only(top: 12),
@@ -440,9 +539,6 @@ class _FormularioPeriodoState extends ConsumerState<_FormularioPeriodo> {
                           }
 
                           final nombreGenerado = _nombreGenerado;
-                          final controller = ref.read(
-                            periodosControllerProvider.notifier,
-                          );
                           final existe = await controller.existeNombrePeriodo(
                             nombreGenerado,
                           );
@@ -461,6 +557,12 @@ class _FormularioPeriodoState extends ConsumerState<_FormularioPeriodo> {
                             _inicio!,
                             _fin!,
                           );
+
+                          if (widget.periodo != null && _activo) {
+                            await controller.activarPeriodo(widget.periodo!.id);
+                            ref.invalidate(cursosControllerProvider);
+                          }
+
                           widget.onCerrarDialogo();
                         },
                         child: Text(
