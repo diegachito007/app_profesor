@@ -24,6 +24,16 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
   String _filtro = '';
   bool _mostrarBuscador = false;
 
+  String capitalizar(String texto) {
+    return texto
+        .toLowerCase()
+        .split(' ')
+        .map(
+          (p) => p.isNotEmpty ? '${p[0].toUpperCase()}${p.substring(1)}' : '',
+        )
+        .join(' ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final estudiantesAsync = ref.watch(
@@ -44,85 +54,107 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
                 .toList()
               ..sort((a, b) => a.apellido.compareTo(b.apellido));
 
-        return ListView(
-          padding: const EdgeInsets.all(16),
+        return Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '${estudiantes.length} estudiante${estudiantes.length == 1 ? '' : 's'} asignado${estudiantes.length == 1 ? '' : 's'}',
-                  style: const TextStyle(fontSize: 14, color: Colors.black54),
-                ),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        _mostrarBuscador ? Icons.close : Icons.search,
-                        color: Colors.black54,
-                      ),
-                      tooltip: 'Buscar estudiante',
-                      onPressed: () =>
-                          setState(() => _mostrarBuscador = !_mostrarBuscador),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.more_vert),
-                      tooltip: 'Opciones',
-                      onPressed: () => _mostrarMenu(context),
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.person_add,
-                        color: Color(0xFF1565C0),
-                      ),
-                      tooltip: 'Agregar estudiante',
-                      onPressed: () => _mostrarFormulario(context),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            if (_mostrarBuscador) ...[
-              const SizedBox(height: 12),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: 'Buscar estudiante...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${estudiantes.length} estudiante${estudiantes.length == 1 ? '' : 's'} asignado${estudiantes.length == 1 ? '' : 's'}',
+                    style: const TextStyle(fontSize: 14, color: Colors.black54),
                   ),
-                ),
-                onChanged: (value) => setState(() => _filtro = value),
-              ),
-              const SizedBox(height: 16),
-            ],
-            if (filtrados.isEmpty)
-              SizedBox(
-                height: MediaQuery.of(context).size.height * 0.5,
-                child: const Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                  Row(
                     children: [
-                      Icon(Icons.school_outlined, size: 48, color: Colors.grey),
-                      SizedBox(height: 12),
-                      Text(
-                        'No hay estudiantes asignados.',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.only(top: 8),
-                        child: Text(
-                          'Puedes agregar estudiantes usando el botón superior.',
-                          style: TextStyle(fontSize: 13, color: Colors.black54),
-                          textAlign: TextAlign.center,
+                      IconButton(
+                        icon: Icon(
+                          _mostrarBuscador ? Icons.close : Icons.search,
+                          color: Colors.black54,
                         ),
+                        tooltip: 'Buscar estudiante',
+                        onPressed: () => setState(
+                          () => _mostrarBuscador = !_mostrarBuscador,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.more_vert),
+                        tooltip: 'Opciones',
+                        onPressed: () => _mostrarMenu(context),
+                      ),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.person_add,
+                          color: Color(0xFF1565C0),
+                        ),
+                        tooltip: 'Agregar estudiante',
+                        onPressed: () => _mostrarFormulario(context),
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
-            if (filtrados.isNotEmpty)
-              ...filtrados.map((est) => _buildCardEstudiante(context, est)),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  if (_mostrarBuscador) ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Buscar estudiante...',
+                        prefixIcon: const Icon(Icons.search),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onChanged: (value) => setState(() => _filtro = value),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  if (filtrados.isEmpty)
+                    SizedBox(
+                      height: MediaQuery.of(context).size.height * 0.5,
+                      child: const Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.school_outlined,
+                              size: 48,
+                              color: Colors.grey,
+                            ),
+                            SizedBox(height: 12),
+                            Text(
+                              'No hay estudiantes asignados.',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            Padding(
+                              padding: EdgeInsets.only(top: 8),
+                              child: Text(
+                                'Puedes agregar estudiantes usando el botón superior.',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.black54,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (filtrados.isNotEmpty)
+                    ...filtrados.map(
+                      (est) => _buildCardEstudiante(context, est),
+                    ),
+                ],
+              ),
+            ),
           ],
         );
       },
@@ -135,50 +167,106 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE0F0FF), width: 1.2),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromARGB(
+              10,
+              0,
+              0,
+              0,
+            ), // reemplazo de withOpacity(0.04)
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            '${est.apellido} ${est.nombre}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+          Expanded(
+            child: Text(
+              '${capitalizar(est.apellido)} ${capitalizar(est.nombre)}',
+              style: const TextStyle(fontSize: 14, color: Colors.black87),
+            ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Cédula: ${est.cedula}',
-            style: const TextStyle(fontSize: 13, color: Colors.black54),
+          IconButton(
+            icon: const Icon(Icons.info_outline, color: Colors.blueGrey),
+            tooltip: 'Ver información',
+            onPressed: () => _mostrarDialogoEstudiante(context, est),
           ),
-          const SizedBox(height: 4),
-          Text(
-            'Teléfono: ${est.telefono}',
-            style: const TextStyle(fontSize: 13, color: Colors.black54),
-          ),
-          const SizedBox(height: 6),
-          Row(
-            children: [
-              Expanded(
-                child: InkWell(
-                  onTap: () => _llamar(est.telefono),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.phone, size: 16, color: Colors.green),
-                      const SizedBox(width: 6),
-                      Text(est.telefono, style: const TextStyle(fontSize: 14)),
-                    ],
+        ],
+      ),
+    );
+  }
+
+  void _mostrarDialogoEstudiante(BuildContext context, Estudiante est) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        contentPadding: const EdgeInsets.all(16),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.person, size: 20, color: Colors.blueGrey),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '${est.apellido} ${est.nombre}',
+                    style: const TextStyle(fontSize: 16),
                   ),
                 ),
-              ),
-              IconButton(
-                icon: const Icon(Icons.edit, color: Colors.blueGrey),
-                onPressed: () => _mostrarFormulario(context, est),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                onPressed: () => _eliminarEstudiante(context, est),
-              ),
-            ],
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                const Icon(Icons.badge, size: 20, color: Colors.blueGrey),
+                const SizedBox(width: 8),
+                Text('Cédula: ${est.cedula}'),
+              ],
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                const Icon(Icons.phone, size: 20, color: Colors.green),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _llamar(est.telefono),
+                  child: Text(
+                    est.telefono,
+                    style: const TextStyle(
+                      color: Colors.blue,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _mostrarFormulario(context, est);
+            },
+            child: const Text('Editar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _eliminarEstudiante(context, est);
+            },
+            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cerrar'),
           ),
         ],
       ),
@@ -307,7 +395,6 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
       return;
     }
 
-    // ← después de cualquier await
     if (!context.mounted) return;
 
     final confirmar =

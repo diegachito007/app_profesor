@@ -6,7 +6,6 @@ import '../../../data/models/periodo_model.dart';
 import '../../../data/models/curso_model.dart';
 import '../../../data/providers/periodo_activo_provider.dart';
 import '../../../shared/utils/notificaciones.dart';
-import '../../../shared/utils/dialogo_confirmacion.dart';
 
 import 'agregar_cursos_page.dart';
 
@@ -62,7 +61,6 @@ class _CursosPageState extends ConsumerState<CursosPage> {
 
           return Column(
             children: [
-              // 🔢 Encabezado
               Container(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: Row(
@@ -106,8 +104,6 @@ class _CursosPageState extends ConsumerState<CursosPage> {
                   ],
                 ),
               ),
-
-              // 🔍 Buscador
               if (_mostrarBuscador)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -130,10 +126,7 @@ class _CursosPageState extends ConsumerState<CursosPage> {
                     ),
                   ),
                 ),
-
               const SizedBox(height: 12),
-
-              // 📋 Lista o vacío
               Expanded(
                 child: cursos.isEmpty
                     ? Center(
@@ -302,11 +295,20 @@ class _CursosPageState extends ConsumerState<CursosPage> {
                   icon: const Icon(Icons.more_vert),
                   onPressed: () => _mostrarMenuCurso(context, ref, curso),
                 ),
-                onTap: () => Navigator.pushNamed(
-                  context,
-                  '/dashboard-curso',
-                  arguments: curso,
-                ),
+                onTap: () {
+                  if (!curso.activo) {
+                    Notificaciones.showWarning(
+                      context,
+                      'Este curso está archivado.',
+                    );
+                    return;
+                  }
+                  Navigator.pushNamed(
+                    context,
+                    '/dashboard-curso',
+                    arguments: curso,
+                  );
+                },
               ),
             ),
           ),
@@ -333,28 +335,14 @@ class _CursosPageState extends ConsumerState<CursosPage> {
               title: Text(curso.activo ? 'Archivar curso' : 'Restaurar curso'),
               onTap: () async {
                 Navigator.pop(context);
-                final confirmado = await mostrarDialogoConfirmacion(
-                  context: context,
-                  titulo: curso.activo ? 'Archivar curso' : 'Restaurar curso',
-                  mensaje:
-                      '¿Estás seguro de que deseas ${curso.activo ? 'archivar' : 'restaurar'} el curso "${curso.nombreCompleto}"?',
-                  textoConfirmar: curso.activo ? 'Archivar' : 'Restaurar',
-                  colorConfirmar: curso.activo ? Colors.blueGrey : Colors.green,
-                  icono: curso.activo ? Icons.archive_outlined : Icons.restore,
-                );
-
-                if (!context.mounted || !confirmado) return;
-
                 await ref
                     .read(cursosControllerProvider.notifier)
                     .archivarCurso(curso.id);
-
-                if (context.mounted) {
-                  Notificaciones.showSuccess(
-                    context,
-                    curso.activo ? 'Curso archivado' : 'Curso restaurado',
-                  );
-                }
+                if (!context.mounted) return;
+                Notificaciones.showSuccess(
+                  context,
+                  curso.activo ? 'Curso archivado' : 'Curso restaurado',
+                );
               },
             ),
             ListTile(
@@ -365,15 +353,34 @@ class _CursosPageState extends ConsumerState<CursosPage> {
               title: const Text('Eliminar curso'),
               onTap: () async {
                 Navigator.pop(context);
-                final confirmado = await mostrarDialogoConfirmacion(
-                  context: context,
-                  titulo: 'Eliminar curso',
-                  mensaje:
-                      '¿Estás seguro de que deseas eliminar el curso "${curso.nombreCompleto}"?',
-                  textoConfirmar: 'Eliminar',
-                  colorConfirmar: Colors.red.shade300,
-                  icono: Icons.delete_outline,
-                );
+                final confirmado =
+                    await showDialog<bool>(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        title: const Text('Eliminar curso'),
+                        content: Text(
+                          '¿Estás seguro de eliminar el curso ${curso.nombreCompleto}?\n\n'
+                          'También se eliminarán todos los datos asociados, como materias, estudiantes y calificaciones.\n\n'
+                          'Esta acción es permanente y no se puede deshacer.',
+                          style: const TextStyle(fontSize: 14),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.pop(dialogContext, false),
+                            child: const Text('Cancelar'),
+                          ),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                            ),
+                            onPressed: () => Navigator.pop(dialogContext, true),
+                            child: const Text('Eliminar'),
+                          ),
+                        ],
+                      ),
+                    ) ??
+                    false;
 
                 if (!context.mounted || !confirmado) return;
 
