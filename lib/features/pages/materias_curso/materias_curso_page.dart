@@ -11,8 +11,6 @@ import '../../../data/models/materia_curso_model.dart';
 import '../../../shared/utils/notificaciones.dart';
 import 'agregar_materias_curso_page.dart';
 
-final materiasExpandidaProvider = StateProvider<Set<int>>((ref) => {});
-
 class MateriasCursoPage extends ConsumerWidget {
   const MateriasCursoPage({super.key});
 
@@ -119,7 +117,7 @@ class MateriasCursoPage extends ConsumerWidget {
           itemCount: activos.length,
           itemBuilder: (context, index) => Column(
             children: [
-              _buildCursoCard(context, ref, activos[index], index),
+              _buildCursoCard(context, ref, activos[index]),
               const SizedBox(height: 12),
             ],
           ),
@@ -128,18 +126,12 @@ class MateriasCursoPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildCursoCard(
-    BuildContext context,
-    WidgetRef ref,
-    Curso curso,
-    int index,
-  ) {
+  Widget _buildCursoCard(BuildContext context, WidgetRef ref, Curso curso) {
     final materiasCursoAsync = ref.watch(
       materiasCursoControllerProvider(curso.id),
     );
     final materiasCatalogo = ref.watch(materiasControllerProvider).value ?? [];
     final materiaMap = {for (var m in materiasCatalogo) m.id: m.nombre};
-    final expandida = ref.watch(materiasExpandidaProvider);
 
     final chipColors = [
       Colors.teal.shade100,
@@ -188,94 +180,47 @@ class MateriasCursoPage extends ConsumerWidget {
                 const Text('No hay materias asignadas.')
               else ...[
                 if (activas.isNotEmpty)
-                  Column(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
                     children: List.generate(activas.length, (i) {
                       final mc = activas[i];
                       final nombre =
                           materiaMap[mc.materiaId] ?? 'Materia desconocida';
                       final color = chipColors[i % chipColors.length];
-                      final isExpanded = expandida.contains(mc.id);
-
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: Border.all(color: color),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              nombre,
+                              style: const TextStyle(color: Colors.black87),
                             ),
-                            margin: const EdgeInsets.symmetric(vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: Border.all(color: color),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  nombre,
-                                  style: const TextStyle(color: Colors.black87),
-                                ),
-                                const SizedBox(width: 4),
-                                GestureDetector(
-                                  onTap: () {
-                                    final set = {...expandida};
-                                    if (isExpanded) {
-                                      set.remove(mc.id);
-                                    } else {
-                                      set.add(mc.id);
-                                    }
-                                    ref
-                                            .read(
-                                              materiasExpandidaProvider
-                                                  .notifier,
-                                            )
-                                            .state =
-                                        set;
-                                  },
-                                  child: const Icon(
-                                    Icons.more_vert,
-                                    size: 16,
-                                    color: Colors.black45,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (isExpanded)
-                            Padding(
-                              padding: const EdgeInsets.only(left: 12, top: 4),
-                              child: Row(
-                                children: [
-                                  ElevatedButton(
-                                    onPressed: () =>
-                                        _archivarMateria(context, ref, mc),
-                                    child: const Text('Archivar'),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  TextButton(
-                                    onPressed: () =>
-                                        _eliminarMateria(context, ref, mc),
-                                    child: const Text('Eliminar'),
-                                  ),
-                                  TextButton(
-                                    onPressed: () {
-                                      final set = {...expandida}..remove(mc.id);
-                                      ref
-                                              .read(
-                                                materiasExpandidaProvider
-                                                    .notifier,
-                                              )
-                                              .state =
-                                          set;
-                                    },
-                                    child: const Text('Cancelar'),
-                                  ),
-                                ],
+                            const SizedBox(width: 4),
+                            IconButton(
+                              icon: const Icon(
+                                Icons.more_vert,
+                                size: 16,
+                                color: Colors.black45,
+                              ),
+                              onPressed: () => _mostrarOpcionesMateria(
+                                context,
+                                ref,
+                                mc,
+                                nombre,
                               ),
                             ),
-                        ],
+                          ],
+                        ),
                       );
                     }),
                   ),
@@ -355,39 +300,52 @@ class MateriasCursoPage extends ConsumerWidget {
     );
   }
 
-  void _archivarMateria(
+  Future<void> _mostrarOpcionesMateria(
     BuildContext context,
     WidgetRef ref,
     MateriaCurso mc,
+    String nombre,
   ) async {
-    final controller = ref.read(
-      materiasCursoControllerProvider(mc.cursoId).notifier,
+    final resultado = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Opciones para "$nombre"'),
+        content: const Text(
+          'Puedes archivar esta materia para conservar su historial, o eliminarla si ya no es necesaria. Esta acción no afectará otras asignaciones.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'cancelar'),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, 'eliminar'),
+            child: const Text('Eliminar'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, 'archivar'),
+            child: const Text('Archivar'),
+          ),
+        ],
+      ),
     );
-    await controller.desactivar(mc.id, mc.cursoId);
-    ref.invalidate(materiasCursoControllerProvider(mc.cursoId));
-    ref
-        .read(materiasExpandidaProvider.notifier)
-        .update((s) => s..remove(mc.id));
-    if (context.mounted) {
-      Notificaciones.showSuccess(context, 'Materia archivada del curso');
-    }
-  }
 
-  void _eliminarMateria(
-    BuildContext context,
-    WidgetRef ref,
-    MateriaCurso mc,
-  ) async {
     final controller = ref.read(
       materiasCursoControllerProvider(mc.cursoId).notifier,
     );
-    await controller.eliminar(mc.id, mc.cursoId);
-    ref.invalidate(materiasCursoControllerProvider(mc.cursoId));
-    ref
-        .read(materiasExpandidaProvider.notifier)
-        .update((s) => s..remove(mc.id));
-    if (context.mounted) {
-      Notificaciones.showSuccess(context, 'Materia eliminada del curso');
+
+    if (resultado == 'archivar') {
+      await controller.desactivar(mc.id, mc.cursoId);
+      ref.invalidate(materiasCursoControllerProvider(mc.cursoId));
+      if (context.mounted) {
+        Notificaciones.showSuccess(context, 'Materia archivada');
+      }
+    } else if (resultado == 'eliminar') {
+      await controller.eliminar(mc.id, mc.cursoId);
+      ref.invalidate(materiasCursoControllerProvider(mc.cursoId));
+      if (context.mounted) {
+        Notificaciones.showSuccess(context, 'Materia eliminada');
+      }
     }
   }
 

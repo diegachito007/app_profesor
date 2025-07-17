@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/controllers/materias_controller.dart';
-import '../../data/models/materia_model.dart';
-import '../../data/models/materia_tipo_model.dart';
-import '../../data/services/materias_tipo_service.dart';
-import '../../shared/utils/notificaciones.dart';
-import '../../shared/utils/dialogo_confirmacion.dart';
-import '../../data/providers/database_provider.dart';
+import '../../../data/controllers/materias_controller.dart';
+import '../../../data/models/materia_model.dart';
+import '../../../data/models/materia_tipo_model.dart';
+import '../../../data/services/materias_tipo_service.dart';
+import '../../../shared/utils/notificaciones.dart';
+import '../../../shared/utils/dialogo_confirmacion.dart';
+import '../../../data/providers/database_provider.dart';
 
 final tiposMateriaProvider = FutureProvider<List<MateriaTipo>>((ref) async {
   final db = await ref.watch(databaseProvider.future);

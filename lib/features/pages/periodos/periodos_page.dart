@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../data/controllers/cursos_controller.dart';
-import '../../data/controllers/periodos_controller.dart';
-import '../../data/models/periodo_model.dart';
-import '../../shared/utils/notificaciones.dart';
-import '../../shared/utils/dialogo_confirmacion.dart';
+import '../../../data/controllers/cursos_controller.dart';
+import '../../../data/controllers/periodos_controller.dart';
+import '../../../data/models/periodo_model.dart';
+import '../../../shared/utils/notificaciones.dart';
+import '../../../shared/utils/dialogo_confirmacion.dart';
 
 class PeriodosPage extends ConsumerStatefulWidget {
   const PeriodosPage({super.key});

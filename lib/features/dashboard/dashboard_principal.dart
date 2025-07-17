@@ -91,8 +91,6 @@ class DashboardPage extends StatelessWidget {
   Widget _buildGridMenu(BuildContext context) {
     final items = [
       {"icon": Icons.class_, "title": "Mis Cursos"},
-      {"icon": Icons.book_outlined, "title": "Mis materias"},
-      {"icon": Icons.group, "title": "Mis Estudiantes"},
       {"icon": Icons.calendar_today, "title": "Mi horario"},
       {"icon": Icons.menu_book, "title": "Materias"},
       {"icon": Icons.grade, "title": "Notas"},
@@ -134,12 +132,6 @@ class DashboardPage extends StatelessWidget {
               switch (title) {
                 case "Mis Cursos":
                   Navigator.pushNamed(context, '/cursos');
-                  break;
-                case "Mis materias":
-                  Navigator.pushNamed(context, '/materias-curso');
-                  break;
-                case "Mis Estudiantes":
-                  Navigator.pushNamed(context, '/estudiantes');
                   break;
                 case "Mi horario":
                   Navigator.pushNamed(context, '/horario');

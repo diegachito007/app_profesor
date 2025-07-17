@@ -3,17 +3,20 @@ import 'package:flutter/material.dart';
 // Páginas principales
 import '../features/home/home.dart';
 import '../features/license/license.dart';
-import '../features/dashboard/dashboard_page.dart';
+import '../features/dashboard/dashboard_principal.dart';
 
 // Páginas de gestión
-import '../features/pages/periodos_page.dart';
+import '../features/pages/periodos/periodos_page.dart';
 import '../features/pages/cursos/cursos_page.dart';
-import '../features/pages/materias_page.dart';
+import '../features/pages/cursos/dashboard/dashboard_cursos.dart';
+import '../features/pages/materias/materias_page.dart';
 import '../features/pages/materias_curso/materias_curso_page.dart';
 import '../features/pages/estudiantes/estudiantes_page.dart';
 import '../features/pages/horarios/horarios_page.dart';
 import '../features/pages/horarios/editar_horarios_page.dart';
 // import '../features/pages/registro/registro_page.dart';
+
+import '../data/models/curso_model.dart';
 
 class AppRoutes {
   // 🔖 Rutas nombradas
@@ -23,6 +26,7 @@ class AppRoutes {
 
   static const String periodos = '/periodos';
   static const String cursos = '/cursos';
+  static const String dashboardCurso = '/dashboard-curso';
   static const String materias = '/materias';
   static const String materiasCurso = '/materias-curso';
   static const String estudiantes = '/estudiantes';
@@ -48,6 +52,12 @@ class AppRoutes {
 
       case cursos:
         return MaterialPageRoute(builder: (_) => const CursosPage());
+
+      case dashboardCurso:
+        final curso = settings.arguments as Curso;
+        return MaterialPageRoute(
+          builder: (_) => DashboardCursoPage(curso: curso),
+        );
 
       case materias:
         return MaterialPageRoute(builder: (_) => const MateriasPage());
