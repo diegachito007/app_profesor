@@ -38,8 +38,17 @@ class MateriasService {
     );
   }
 
-  Future<void> eliminar(int id) async {
-    await db.delete('materias', where: 'id = ?', whereArgs: [id]);
+  Future<bool> eliminar(int id) async {
+    try {
+      final count = await db.delete(
+        'materias',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+      return count > 0;
+    } catch (e) {
+      return false;
+    }
   }
 
   Future<Materia?> obtenerPorId(int id) async {

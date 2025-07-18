@@ -8,6 +8,7 @@ import '../../../data/services/materias_service.dart';
 import '../../../data/services/materias_tipo_service.dart';
 import '../../../data/providers/database_provider.dart';
 import '../../../shared/utils/notificaciones.dart';
+import '../../../shared/utils/texto_normalizado.dart';
 
 class AgregarMateriasCursoPage extends ConsumerStatefulWidget {
   final int cursoId;
@@ -107,9 +108,7 @@ class _AgregarMateriasCursoPageState
 
                 final filtradas = disponibles
                     .where(
-                      (m) => m.nombre.toLowerCase().contains(
-                        _filtro.toLowerCase(),
-                      ),
+                      (m) => normalizar(m.nombre).contains(normalizar(_filtro)),
                     )
                     .toList();
 
@@ -121,7 +120,7 @@ class _AgregarMateriasCursoPageState
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            '${disponibles.length} disponibles',
+                            '${disponibles.length} materias disponibles',
                             style: const TextStyle(
                               fontSize: 14,
                               color: Colors.black54,
@@ -203,17 +202,10 @@ class _AgregarMateriasCursoPageState
                                   color: Colors.white,
                                   border: Border.all(
                                     color: seleccionada
-                                        ? Colors.green.shade300
+                                        ? Colors.blue.shade600
                                         : Colors.blue.shade100,
                                   ),
                                   borderRadius: BorderRadius.circular(12),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: Colors.black12,
-                                      blurRadius: 4,
-                                      offset: Offset(0, 2),
-                                    ),
-                                  ],
                                 ),
                                 padding: const EdgeInsets.symmetric(
                                   horizontal: 16,
@@ -223,10 +215,8 @@ class _AgregarMateriasCursoPageState
                                   children: [
                                     Expanded(
                                       child: Text(
-                                        materia.nombre,
-                                        style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w500,
+                                        capitalizarTituloConTildes(
+                                          materia.nombre,
                                         ),
                                       ),
                                     ),
@@ -235,10 +225,10 @@ class _AgregarMateriasCursoPageState
                                         milliseconds: 200,
                                       ),
                                       child: seleccionada
-                                          ? const Icon(
+                                          ? Icon(
                                               Icons.check_circle,
-                                              color: Colors.green,
-                                              key: ValueKey('check'),
+                                              color: Colors.blue.shade600,
+                                              key: const ValueKey('check'),
                                             )
                                           : const Icon(
                                               Icons.radio_button_unchecked,

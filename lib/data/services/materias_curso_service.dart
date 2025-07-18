@@ -64,4 +64,12 @@ class MateriasCursoService {
 
     return result.map((e) => MateriaCurso.fromMap(e)).toList();
   }
+
+  Future<void> eliminarAsignacionesPorMateriaId(int materiaId) async {
+    await db.delete(
+      'materias_curso',
+      where: 'materia_id = ?',
+      whereArgs: [materiaId],
+    );
+  }
 }
