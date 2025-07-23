@@ -120,19 +120,34 @@ class MateriasTab extends ConsumerWidget {
     String nombre,
     bool activa,
   ) {
+    final esArchivada = !activa;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: esArchivada ? const Color(0xFFF5F5F5) : Colors.white,
         border: Border.all(
-          color: activa ? Colors.blue.shade100 : Colors.grey.shade300,
+          color: esArchivada ? Colors.grey.shade300 : Colors.blue.shade100,
         ),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
-          Expanded(child: Text(capitalizarTituloConTildes(nombre))),
+          if (esArchivada)
+            const Padding(
+              padding: EdgeInsets.only(right: 8),
+              child: Icon(Icons.archive_outlined, size: 18, color: Colors.grey),
+            ),
+          Expanded(
+            child: Text(
+              capitalizarTituloConTildes(nombre),
+              style: TextStyle(
+                color: esArchivada ? Colors.black54 : Colors.black87,
+                fontStyle: esArchivada ? FontStyle.italic : FontStyle.normal,
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.more_vert),
             onPressed: () => _mostrarMenuMateria(context, ref, mc, nombre),

@@ -16,7 +16,6 @@ class HorariosPage extends ConsumerWidget {
     "Jueves",
     "Viernes",
   ];
-
   final List<int> horas = const [1, 2, 3, 4, 5, 6, 7];
 
   Color generarColor(String curso, String materia) {
@@ -25,7 +24,7 @@ class HorariosPage extends ConsumerWidget {
     final r = (hash & 0xFF0000) >> 16;
     final g = (hash & 0x00FF00) >> 8;
     final b = (hash & 0x0000FF);
-    return Color.fromARGB(255, r, g, b).withAlpha(60); // ✅ más suave
+    return Color.fromARGB(255, r, g, b).withAlpha(40);
   }
 
   @override
@@ -34,8 +33,30 @@ class HorariosPage extends ConsumerWidget {
       length: dias.length,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text("Mi horario"),
-          bottom: TabBar(tabs: dias.map((dia) => Tab(text: dia)).toList()),
+          backgroundColor: const Color(0xFF1565C0),
+          elevation: 0,
+          centerTitle: true,
+          iconTheme: const IconThemeData(color: Colors.white),
+          title: const Text(
+            'Mi horario',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(48),
+            child: Container(
+              color: Colors.white,
+              child: TabBar(
+                indicatorColor: const Color(0xFF1565C0),
+                labelColor: Colors.black87,
+                unselectedLabelColor: Colors.black45,
+                tabs: dias.map((dia) => Tab(text: dia)).toList(),
+              ),
+            ),
+          ),
         ),
         body: TabBarView(
           children: dias
@@ -54,7 +75,7 @@ class HorariosPage extends ConsumerWidget {
       error: (e, _) => Center(child: Text("Error: $e")),
       data: (horarios) {
         return ListView.builder(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           itemCount: horas.length,
           itemBuilder: (context, index) {
             final hora = horas[index];
@@ -74,20 +95,36 @@ class HorariosPage extends ConsumerWidget {
             );
 
             final estaVacio = bloque.horario.id == 0;
-            final cardColor = estaVacio
-                ? Colors
-                      .grey
-                      .shade200 // ✅ fondo para bloques vacíos
-                : generarColor(bloque.nombreCurso, bloque.nombreMateria);
+            final esActivo = bloque.estaActivo;
 
-            return Card(
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              elevation: 3,
-              color: cardColor,
-              shape: RoundedRectangleBorder(
+            final cardColor = estaVacio
+                ? Colors.grey.shade200
+                : esActivo
+                ? generarColor(
+                    bloque.nombreCursoFinal,
+                    bloque.nombreMateriaFinal,
+                  )
+                : Colors.orange.shade100;
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(
+                color: cardColor,
                 borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blue.shade100),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withAlpha(25),
+                    blurRadius: 3,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
               child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
                 leading: CircleAvatar(
                   backgroundColor: Colors.blue.shade100,
                   child: Text(
@@ -99,30 +136,32 @@ class HorariosPage extends ConsumerWidget {
                   ),
                 ),
                 title: estaVacio
-                    ? null
+                    ? const Text(
+                        'Bloque sin asignar',
+                        style: TextStyle(color: Colors.black54, fontSize: 14),
+                      )
                     : Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            bloque.nombreCurso,
-                            style: const TextStyle(
+                            bloque.nombreCursoFinal,
+                            style: TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w600,
-                              color: Colors.indigo,
+                              color: esActivo ? Colors.indigo : Colors.grey,
                             ),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            bloque.nombreMateria,
-                            style: const TextStyle(
+                            bloque.nombreMateriaFinal,
+                            style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: Colors.black87,
+                              color: esActivo ? Colors.black87 : Colors.black45,
                             ),
                           ),
                         ],
                       ),
-                subtitle: const SizedBox.shrink(),
                 trailing: estaVacio
                     ? IconButton(
                         icon: const Icon(Icons.edit, size: 20),
@@ -140,12 +179,78 @@ class HorariosPage extends ConsumerWidget {
                         },
                       )
                     : IconButton(
-                        icon: const Icon(Icons.delete, size: 20),
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.redAccent,
+                        ),
                         tooltip: "Eliminar bloque",
-                        onPressed: () {
-                          ref
-                              .read(horariosControllerProvider(dia).notifier)
-                              .eliminarHorario(bloque.horario.id!);
+                        onPressed: () async {
+                          final confirmar =
+                              await showDialog<bool>(
+                                context: context,
+                                builder: (_) => AlertDialog(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 24,
+                                    vertical: 20,
+                                  ),
+                                  content: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.warning_amber_rounded,
+                                        color: Colors.redAccent,
+                                        size: 48,
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        '¿Eliminar bloque?',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleMedium,
+                                        textAlign: TextAlign.center,
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'Esta acción eliminará el bloque asignado a la hora $hora del $dia.\n\nNo se eliminarán las materias ni cursos, solo la asignación en el horario.',
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(fontSize: 14),
+                                      ),
+                                    ],
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, false),
+                                      child: const Text('Cancelar'),
+                                    ),
+                                    ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.redAccent,
+                                      ),
+                                      onPressed: () =>
+                                          Navigator.pop(context, true),
+                                      child: const Text('Eliminar'),
+                                    ),
+                                  ],
+                                ),
+                              ) ??
+                              false;
+
+                          if (confirmar) {
+                            final controller = ref.read(
+                              horariosControllerProvider(dia).notifier,
+                            );
+                            await controller.eliminarHorario(
+                              bloque.horario.id!,
+                            );
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Bloque eliminado')),
+                            );
+                          }
                         },
                       ),
               ),

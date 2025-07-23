@@ -2,8 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/materia_model.dart';
 import '../services/materias_service.dart';
 import '../providers/database_provider.dart';
-import '../providers/materias_trigger_provider.dart'; // ⬅️ Asegúrate de tener este archivo
+import '../providers/materias_trigger_provider.dart';
+import '../providers/materias_curso_global_provider.dart';
 import '../services/materias_curso_service.dart';
+import '../services/horarios_service.dart'; // 🔁 nuevo import para limpiar bloques huérfanos
 
 final materiasControllerProvider =
     AsyncNotifierProvider<MateriasController, List<Materia>>(
@@ -11,7 +13,7 @@ final materiasControllerProvider =
     );
 
 class MateriasController extends AsyncNotifier<List<Materia>> {
-  late MateriasService _service; // ⬅️ Ya no es final
+  late MateriasService _service;
 
   @override
   Future<List<Materia>> build() async {
@@ -32,26 +34,25 @@ class MateriasController extends AsyncNotifier<List<Materia>> {
     final exito = await _service.eliminar(id);
     if (exito) {
       final db = await ref.watch(databaseProvider.future);
-      final materiasCursoService = MateriasCursoService(db);
 
-      // 🔥 Elimina todas las asignaciones de esta materia
+      final materiasCursoService = MateriasCursoService(db);
       await materiasCursoService.eliminarAsignacionesPorMateriaId(id);
 
-      // 🔁 Notifica que el catálogo ha cambiado
+      final horariosService = HorariosService(db);
+      await horariosService.limpiarBloquesHuerfanos();
+
       ref.read(materiasTriggerProvider.notifier).state++;
-
-      // ⏱️ Opcional: reconstruye todos los tabs de cursos si usas triggers por curso
-      // ref.read(materiasCursoTriggerProvider(0).notifier).state++;
-
-      // 🔁 Recarga el catálogo completo
       state = await AsyncValue.guard(() => _service.obtenerTodas());
+
+      await ref.read(materiasCursoGlobalProvider.notifier).recargar();
     }
+
     return exito;
   }
 
   Future<void> actualizarMateria(Materia materia) async {
     await _service.actualizar(materia);
-    ref.read(materiasTriggerProvider.notifier).state++; // 🔁 notifica cambio
+    ref.read(materiasTriggerProvider.notifier).state++;
     state = await AsyncValue.guard(() => _service.obtenerTodas());
   }
 

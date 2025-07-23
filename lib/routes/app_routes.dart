@@ -13,7 +13,7 @@ import '../features/pages/materias/materias_page.dart';
 import '../features/pages/materias_curso/materias_curso_page.dart';
 import '../features/pages/estudiantes/estudiantes_page.dart';
 import '../features/pages/horarios/horarios_page.dart';
-import '../features/pages/horarios/editar_horarios_page.dart';
+import '../features/pages/horarios/asignar_bloque_horario_page.dart';
 // import '../features/pages/registro/registro_page.dart';
 
 import '../data/models/curso_model.dart';
@@ -74,7 +74,7 @@ class AppRoutes {
       case editarHorario:
         final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
-          builder: (_) => EditarHorariosPage(
+          builder: (_) => AsignarBloqueHorarioPage(
             dia: args['dia'] as String,
             hora: args['hora'] as int,
             seleccionada: args['horario'], // opcional: MateriaCurso ya asignada

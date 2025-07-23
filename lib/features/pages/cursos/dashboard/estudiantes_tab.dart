@@ -10,12 +10,11 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../data/models/estudiante_model.dart';
 import '../../../../data/controllers/estudiantes_controller.dart';
+import '../../../../shared/utils/texto_normalizado.dart';
 
 class EstudiantesTab extends ConsumerStatefulWidget {
   final int cursoId;
-
   const EstudiantesTab({super.key, required this.cursoId});
-
   @override
   ConsumerState<EstudiantesTab> createState() => _EstudiantesTabState();
 }
@@ -23,16 +22,6 @@ class EstudiantesTab extends ConsumerStatefulWidget {
 class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
   String _filtro = '';
   bool _mostrarBuscador = false;
-
-  String capitalizar(String texto) {
-    return texto
-        .toLowerCase()
-        .split(' ')
-        .map(
-          (p) => p.isNotEmpty ? '${p[0].toUpperCase()}${p.substring(1)}' : '',
-        )
-        .join(' ');
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,9 +36,9 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
         final filtrados =
             estudiantes
                 .where(
-                  (e) => e.nombreCompleto.toLowerCase().contains(
-                    _filtro.toLowerCase(),
-                  ),
+                  (e) => normalizar(
+                    e.nombreCompleto,
+                  ).contains(normalizar(_filtro)),
                 )
                 .toList()
               ..sort((a, b) => a.apellido.compareTo(b.apellido));
@@ -95,24 +84,39 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
                 ],
               ),
             ),
+            if (_mostrarBuscador)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey.shade300),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      hintText: 'Buscar estudiante...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _filtro.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () => setState(() => _filtro = ''),
+                            )
+                          : null,
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                    ),
+                    onChanged: (value) =>
+                        setState(() => _filtro = value.trim()),
+                  ),
+                ),
+              ),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [
-                  if (_mostrarBuscador) ...[
-                    const SizedBox(height: 12),
-                    TextField(
-                      decoration: InputDecoration(
-                        hintText: 'Buscar estudiante...',
-                        prefixIcon: const Icon(Icons.search),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onChanged: (value) => setState(() => _filtro = value),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
                   if (filtrados.isEmpty)
                     SizedBox(
                       height: MediaQuery.of(context).size.height * 0.5,
@@ -171,12 +175,7 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(
-            color: Color.fromARGB(
-              10,
-              0,
-              0,
-              0,
-            ), // reemplazo de withOpacity(0.04)
+            color: Color.fromARGB(10, 0, 0, 0),
             blurRadius: 4,
             offset: Offset(0, 2),
           ),
@@ -186,7 +185,7 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
         children: [
           Expanded(
             child: Text(
-              '${capitalizar(est.apellido)} ${capitalizar(est.nombre)}',
+              '${capitalizarConTildes(est.apellido)} ${capitalizarConTildes(est.nombre)}',
               style: const TextStyle(fontSize: 14, color: Colors.black87),
             ),
           ),
@@ -216,7 +215,7 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    '${est.apellido} ${est.nombre}',
+                    '${capitalizarConTildes(est.apellido)} ${capitalizarConTildes(est.nombre)}',
                     style: const TextStyle(fontSize: 16),
                   ),
                 ),
@@ -239,10 +238,7 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
                   onTap: () => _llamar(est.telefono),
                   child: Text(
                     est.telefono,
-                    style: const TextStyle(
-                      color: Colors.blue,
-                      decoration: TextDecoration.underline,
-                    ),
+                    style: const TextStyle(color: Colors.blue),
                   ),
                 ),
               ],
@@ -271,6 +267,88 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
         ],
       ),
     );
+  }
+
+  void _mostrarFormulario(BuildContext context, [Estudiante? estudiante]) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: _FormularioEstudiante(
+          cursoId: widget.cursoId,
+          estudiante: estudiante,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _eliminarEstudiante(BuildContext context, Estudiante est) async {
+    final confirmar =
+        await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 20,
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.redAccent,
+                  size: 48,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  '¿Eliminar estudiante?',
+                  style: Theme.of(context).textTheme.titleMedium,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Estás a punto de eliminar a ${est.nombreCompleto}.\n\n '
+                  'Esta acción es permanente y eliminará todos los datos relacionados con este estudiante.',
+                  style: const TextStyle(fontSize: 14),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Eliminar'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (confirmar) {
+      final controller = ref.read(
+        estudiantesControllerProvider(widget.cursoId).notifier,
+      );
+      await controller.eliminarEstudiante(est.id, widget.cursoId);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Estudiante eliminado')));
+    }
+  }
+
+  Future<void> _llamar(String numero) async {
+    final uri = Uri(scheme: 'tel', path: numero);
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
   void _mostrarMenu(BuildContext context) {
@@ -324,6 +402,119 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
     );
   }
 
+  Future<void> _generarYCompartirPlantilla(BuildContext context) async {
+    final excel = xls.Excel.createExcel();
+    final sheet = excel['Estudiantes'];
+    sheet.appendRow(['CÉDULA', 'NOMBRES', 'APELLIDOS', 'TELÉFONO']);
+
+    final dir = await getApplicationDocumentsDirectory();
+    final filePath = '${dir.path}/plantilla_estudiantes.xlsx';
+    final file = File(filePath);
+    await file.writeAsBytes(excel.encode()!);
+
+    if (!context.mounted) return;
+    await Share.shareXFiles([
+      XFile(file.path),
+    ], text: 'Aquí tienes la plantilla para importar estudiantes.');
+  }
+
+  Future<void> _exportarEstudiantes(BuildContext context) async {
+    final estudiantes =
+        ref.read(estudiantesControllerProvider(widget.cursoId)).value ?? [];
+
+    if (estudiantes.isEmpty) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No hay estudiantes para exportar.')),
+      );
+      return;
+    }
+
+    final excel = xls.Excel.createExcel();
+    final sheet = excel['Estudiantes'];
+    sheet.appendRow(['CÉDULA', 'NOMBRES', 'APELLIDOS', 'TELÉFONO']);
+
+    for (final est in estudiantes) {
+      sheet.appendRow([est.cedula, est.nombre, est.apellido, est.telefono]);
+    }
+
+    final dir = await getApplicationDocumentsDirectory();
+    final filePath = '${dir.path}/estudiantes_exportados.xlsx';
+    final file = File(filePath);
+    await file.writeAsBytes(excel.encode()!);
+
+    if (!context.mounted) return;
+    await Share.shareXFiles([
+      XFile(file.path),
+    ], text: 'Listado de estudiantes exportado.');
+  }
+
+  Future<void> _confirmarEliminacionMasiva(BuildContext context) async {
+    final confirmar =
+        await showDialog<bool>(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('¿Eliminar todos los estudiantes?'),
+            content: const Text(
+              'Esta acción eliminará todos los estudiantes del curso. ¿Deseas continuar?',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancelar'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Eliminar todos'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!confirmar || !context.mounted) return;
+
+    final controller = ref.read(
+      estudiantesControllerProvider(widget.cursoId).notifier,
+    );
+    await controller.eliminarTodosLosEstudiantes();
+
+    if (!context.mounted) return;
+    await showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        contentPadding: const EdgeInsets.all(24),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cleaning_services_rounded,
+              color: Colors.redAccent,
+              size: 64,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              '¡Limpieza completada!',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Todos los estudiantes fueron eliminados del curso.',
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Aceptar'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _cargarArchivo(BuildContext context) async {
     const typeGroup = XTypeGroup(label: 'Excel', extensions: ['xlsx']);
     final file = await openFile(acceptedTypeGroups: [typeGroup]);
@@ -362,10 +553,8 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
       if (row.length < 4) continue;
 
       final cedula = row[0]?.value?.toString().trim() ?? '';
-      final nombres = _normalizarTexto(row[1]?.value?.toString().trim() ?? '');
-      final apellidos = _normalizarTexto(
-        row[2]?.value?.toString().trim() ?? '',
-      );
+      final nombres = normalizar(row[1]?.value?.toString().trim() ?? '');
+      final apellidos = normalizar(row[2]?.value?.toString().trim() ?? '');
       var telefono = row[3]?.value?.toString().trim() ?? '';
       telefono = telefono.replaceAll(RegExp(r'\D'), '');
       if (telefono.length == 9) telefono = '0$telefono';
@@ -493,170 +682,6 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
     );
   }
 
-  Future<void> _exportarEstudiantes(BuildContext context) async {
-    final estudiantes =
-        ref.read(estudiantesControllerProvider(widget.cursoId)).value ?? [];
-    if (estudiantes.isEmpty) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No hay estudiantes para exportar.')),
-      );
-      return;
-    }
-
-    final excel = xls.Excel.createExcel();
-    final sheet = excel['Estudiantes'];
-    sheet.appendRow(['CÉDULA', 'NOMBRES', 'APELLIDOS', 'TELÉFONO']);
-
-    for (final est in estudiantes) {
-      sheet.appendRow([est.cedula, est.nombre, est.apellido, est.telefono]);
-    }
-
-    final dir = await getApplicationDocumentsDirectory();
-    final filePath = '${dir.path}/estudiantes_exportados.xlsx';
-    final file = File(filePath);
-    await file.writeAsBytes(excel.encode()!);
-
-    if (!context.mounted) return;
-    await Share.shareXFiles([
-      XFile(file.path),
-    ], text: 'Listado de estudiantes exportado.');
-  }
-
-  Future<void> _confirmarEliminacionMasiva(BuildContext context) async {
-    final confirmar =
-        await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('¿Eliminar todos los estudiantes?'),
-            content: const Text(
-              'Esta acción eliminará todos los estudiantes del curso. ¿Deseas continuar?',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Eliminar todos'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-
-    if (!confirmar || !context.mounted) return;
-
-    final controller = ref.read(
-      estudiantesControllerProvider(widget.cursoId).notifier,
-    );
-    await controller.eliminarTodosLosEstudiantes();
-
-    if (!context.mounted) return;
-
-    await showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        contentPadding: const EdgeInsets.all(24),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.cleaning_services_rounded,
-              color: Colors.redAccent,
-              size: 64,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '¡Limpieza completada!',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Todos los estudiantes fueron eliminados del curso.',
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Aceptar'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _generarYCompartirPlantilla(BuildContext context) async {
-    final excel = xls.Excel.createExcel();
-    final sheet = excel['Estudiantes'];
-    sheet.appendRow(['CÉDULA', 'NOMBRES', 'APELLIDOS', 'TELÉFONO']);
-
-    final dir = await getApplicationDocumentsDirectory();
-    final filePath = '${dir.path}/plantilla_estudiantes.xlsx';
-    final file = File(filePath);
-    await file.writeAsBytes(excel.encode()!);
-
-    if (!context.mounted) return;
-    await Share.shareXFiles([
-      XFile(file.path),
-    ], text: 'Aquí tienes la plantilla para importar estudiantes.');
-  }
-
-  Future<void> _llamar(String numero) async {
-    final uri = Uri(scheme: 'tel', path: numero);
-    if (await canLaunchUrl(uri)) await launchUrl(uri);
-  }
-
-  void _mostrarFormulario(BuildContext context, [Estudiante? estudiante]) {
-    showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: _FormularioEstudiante(
-          cursoId: widget.cursoId,
-          estudiante: estudiante,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _eliminarEstudiante(BuildContext context, Estudiante est) async {
-    final confirmar =
-        await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('¿Eliminar estudiante?'),
-            content: Text('¿Deseas eliminar a "${est.nombreCompleto}"?'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Eliminar'),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-
-    if (confirmar) {
-      final controller = ref.read(
-        estudiantesControllerProvider(widget.cursoId).notifier,
-      );
-      await controller.eliminarEstudiante(est.id, widget.cursoId);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Estudiante eliminado')));
-    }
-  }
-
   void _mostrarAlerta(BuildContext context, String mensaje) {
     showDialog(
       context: context,
@@ -671,28 +696,6 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
         ],
       ),
     );
-  }
-
-  String _normalizarTexto(String input) {
-    const tildes = {
-      'á': 'a',
-      'é': 'e',
-      'í': 'i',
-      'ó': 'o',
-      'ú': 'u',
-      'Á': 'A',
-      'É': 'E',
-      'Í': 'I',
-      'Ó': 'O',
-      'Ú': 'U',
-      'ñ': 'Ñ',
-      'Ñ': 'Ñ',
-    };
-    var texto = input;
-    tildes.forEach((original, reemplazo) {
-      texto = texto.replaceAll(original, reemplazo);
-    });
-    return texto.toUpperCase();
   }
 }
 
@@ -766,7 +769,7 @@ class _FormularioEstudianteState extends ConsumerState<_FormularioEstudiante> {
                   TextFormField(
                     controller: _nombreCtrl,
                     decoration: const InputDecoration(labelText: 'Nombres'),
-                    inputFormatters: [UppercaseSinTildesFormatter()],
+                    inputFormatters: [UpperCaseSinTildesFormatter()],
                     validator: (value) => value == null || value.isEmpty
                         ? 'Campo obligatorio'
                         : null,
@@ -774,7 +777,7 @@ class _FormularioEstudianteState extends ConsumerState<_FormularioEstudiante> {
                   TextFormField(
                     controller: _apellidoCtrl,
                     decoration: const InputDecoration(labelText: 'Apellidos'),
-                    inputFormatters: [UppercaseSinTildesFormatter()],
+                    inputFormatters: [UpperCaseSinTildesFormatter()],
                     validator: (value) => value == null || value.isEmpty
                         ? 'Campo obligatorio'
                         : null,
@@ -892,39 +895,6 @@ class _FormularioEstudianteState extends ConsumerState<_FormularioEstudiante> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class UppercaseSinTildesFormatter extends TextInputFormatter {
-  static const _tildes = {
-    'á': 'A',
-    'é': 'E',
-    'í': 'I',
-    'ó': 'O',
-    'ú': 'U',
-    'Á': 'A',
-    'É': 'E',
-    'Í': 'I',
-    'Ó': 'O',
-    'Ú': 'U',
-    'ñ': 'Ñ',
-    'Ñ': 'Ñ',
-  };
-
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    String texto = newValue.text;
-    _tildes.forEach((original, reemplazo) {
-      texto = texto.replaceAll(original, reemplazo);
-    });
-    texto = texto.toUpperCase();
-    return TextEditingValue(
-      text: texto,
-      selection: TextSelection.collapsed(offset: texto.length),
     );
   }
 }

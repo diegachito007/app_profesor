@@ -86,4 +86,8 @@ class CursosService {
     }
     return null;
   }
+
+  Future<void> restaurarCurso(int id) async {
+    await db.update('cursos', {'activo': 1}, where: 'id = ?', whereArgs: [id]);
+  }
 }

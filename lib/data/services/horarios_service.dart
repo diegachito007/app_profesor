@@ -81,6 +81,9 @@ class HorariosService {
         'activo': row['activo'],
         'fecha_asignacion': row['fecha_asignacion'],
         'fecha_desactivacion': row['fecha_desactivacion'],
+        'nombre_materia': row['nombre_materia'], // ✅ necesario
+        'nombre_curso': row['nombre_curso'], // ✅ necesario
+        'paralelo': null, // opcional si ya lo incluiste en el nombre del curso
       });
 
       return HorarioExpandido(
@@ -99,5 +102,14 @@ class HorariosService {
       where: 'id = ?',
       whereArgs: [horario.id],
     );
+  }
+
+  Future<void> limpiarBloquesHuerfanos() async {
+    await db.rawDelete('''
+    DELETE FROM horario_clase
+    WHERE materia_curso_id NOT IN (
+      SELECT id FROM materias_curso WHERE activo = 1
+    )
+  ''');
   }
 }

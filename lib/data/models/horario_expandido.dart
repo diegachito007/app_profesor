@@ -14,8 +14,19 @@ class HorarioExpandido {
     required this.nombreCurso,
   });
 
-  String get descripcion => '$nombreCurso - $nombreMateria';
+  /// 🧠 Prioriza nombre desde materiaCurso si está presente
+  String get nombreMateriaFinal => materiaCurso?.nombreMateria ?? nombreMateria;
 
+  String get nombreCursoFinal =>
+      materiaCurso?.nombreCursoCompleto ?? nombreCurso;
+
+  /// 🎯 Descripción compuesta para mostrar en UI
+  String get descripcion => '$nombreCursoFinal - $nombreMateriaFinal';
+
+  /// 🔍 Estado del bloque (activo/inactivo)
+  bool get estaActivo => materiaCurso?.activo ?? false;
+
+  /// 🧩 Constructor desde SQL JOIN
   factory HorarioExpandido.fromMap(Map<String, dynamic> map) {
     return HorarioExpandido(
       horario: Horario(
@@ -32,6 +43,9 @@ class HorarioExpandido {
               'activo': map['activo'],
               'fecha_asignacion': map['fecha_asignacion'],
               'fecha_desactivacion': map['fecha_desactivacion'],
+              'nombre_materia': map['nombre_materia'],
+              'nombre_curso': map['nombre_curso'],
+              'paralelo': map['paralelo'],
             })
           : null,
       nombreMateria: map['nombre_materia'] as String? ?? 'Materia desconocida',

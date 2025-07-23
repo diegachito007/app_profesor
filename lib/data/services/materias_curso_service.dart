@@ -54,13 +54,13 @@ class MateriasCursoService {
 
   Future<List<MateriaCurso>> obtenerTodasActivas() async {
     final result = await db.rawQuery('''
-    SELECT mc.*, m.nombre AS nombre_materia, c.nombre AS nombre_curso, c.paralelo AS paralelo
-    FROM materias_curso mc
-    JOIN materias m ON mc.materia_id = m.id
-    JOIN cursos c ON mc.curso_id = c.id
-    WHERE mc.activo = 1
-    ORDER BY c.nombre, m.nombre
-  ''');
+      SELECT mc.*, m.nombre AS nombre_materia, c.nombre AS nombre_curso, c.paralelo AS paralelo
+      FROM materias_curso mc
+      JOIN materias m ON mc.materia_id = m.id
+      JOIN cursos c ON mc.curso_id = c.id
+      WHERE mc.activo = 1
+      ORDER BY c.nombre, m.nombre
+    ''');
 
     return result.map((e) => MateriaCurso.fromMap(e)).toList();
   }
@@ -69,6 +69,33 @@ class MateriasCursoService {
     await db.delete(
       'materias_curso',
       where: 'materia_id = ?',
+      whereArgs: [materiaId],
+    );
+  }
+
+  Future<void> archivarTodasPorCurso(int cursoId) async {
+    await db.update(
+      'materias_curso',
+      {'activo': 0, 'fecha_desactivacion': DateTime.now().toIso8601String()},
+      where: 'curso_id = ?',
+      whereArgs: [cursoId],
+    );
+  }
+
+  Future<void> restaurarAsignacionesPorCurso(int cursoId) async {
+    await db.update(
+      'materias_curso',
+      {'activo': 1, 'fecha_desactivacion': null},
+      where: 'curso_id = ? AND activo = 0',
+      whereArgs: [cursoId],
+    );
+  }
+
+  Future<void> archivarMateria(int materiaId) async {
+    await db.update(
+      'materias_curso',
+      {'activo': 0, 'fecha_desactivacion': DateTime.now().toIso8601String()},
+      where: 'materia_id = ? AND activo = 1',
       whereArgs: [materiaId],
     );
   }

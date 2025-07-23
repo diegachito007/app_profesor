@@ -196,7 +196,7 @@ class _CursosPageState extends ConsumerState<CursosPage> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
+        error: (_, __) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -208,9 +208,9 @@ class _CursosPageState extends ConsumerState<CursosPage> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
-              Text(
-                e.toString(),
-                style: const TextStyle(color: Colors.black54),
+              const Text(
+                'Intenta nuevamente o revisa tu conexión.',
+                style: TextStyle(color: Colors.black54),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 16),
@@ -335,10 +335,20 @@ class _CursosPageState extends ConsumerState<CursosPage> {
               title: Text(curso.activo ? 'Archivar curso' : 'Restaurar curso'),
               onTap: () async {
                 Navigator.pop(context);
-                await ref
-                    .read(cursosControllerProvider.notifier)
-                    .archivarCurso(curso.id);
+
+                if (curso.activo) {
+                  await ref
+                      .read(cursosControllerProvider.notifier)
+                      .archivarCurso(curso.id);
+                } else {
+                  await ref
+                      .read(cursosControllerProvider.notifier)
+                      .restaurarCurso(curso.id);
+                }
+
                 if (!context.mounted) return;
+
+                // ✅ Mantenerse en CursosPage
                 Notificaciones.showSuccess(
                   context,
                   curso.activo ? 'Curso archivado' : 'Curso restaurado',

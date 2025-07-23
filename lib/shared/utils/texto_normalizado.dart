@@ -11,6 +11,40 @@ class UpperCaseTextFormatter extends TextInputFormatter {
   }
 }
 
+/// 🔡 Formatter que convierte texto en mayúsculas y elimina tildes
+class UpperCaseSinTildesFormatter extends TextInputFormatter {
+  static const _tildes = {
+    'á': 'a',
+    'é': 'e',
+    'í': 'i',
+    'ó': 'o',
+    'ú': 'u',
+    'Á': 'A',
+    'É': 'E',
+    'Í': 'I',
+    'Ó': 'O',
+    'Ú': 'U',
+    'ñ': 'Ñ',
+    'Ñ': 'Ñ',
+  };
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    String texto = newValue.text;
+    _tildes.forEach((original, reemplazo) {
+      texto = texto.replaceAll(original, reemplazo);
+    });
+    texto = texto.toUpperCase();
+    return TextEditingValue(
+      text: texto,
+      selection: TextSelection.collapsed(offset: texto.length),
+    );
+  }
+}
+
 /// 🧼 Normaliza texto eliminando tildes, símbolos y convirtiendo a minúsculas
 String normalizar(String texto) {
   return texto

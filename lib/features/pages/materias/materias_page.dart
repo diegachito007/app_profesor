@@ -8,7 +8,6 @@ import '../../../shared/utils/notificaciones.dart';
 import '../../../data/providers/database_provider.dart';
 import '../../../data/providers/materias_por_tipo_provider.dart';
 import '../../../data/controllers/materias_controller.dart';
-import '../../../data/providers/materias_trigger_provider.dart';
 import '../../../shared/utils/texto_normalizado.dart';
 
 final tiposMateriaProvider = FutureProvider<List<MateriaTipo>>((ref) async {
@@ -26,6 +25,7 @@ class MateriasPage extends ConsumerStatefulWidget {
 
 class _MateriasPageState extends ConsumerState<MateriasPage> {
   String _filtroTexto = '';
+  bool _mostrarBuscador = false;
   int? _tipoSeleccionado;
 
   @override
@@ -76,57 +76,75 @@ class _MateriasPageState extends ConsumerState<MateriasPage> {
                     style: const TextStyle(fontSize: 14, color: Colors.black54),
                   ),
                   loading: () => const Text('Cargando...'),
-                  error: (_, __) => const Text('Error'),
+                  error: (_, __) => const Text('Error al cargar materias'),
                 ),
-                IconButton(
-                  icon: const Icon(
-                    Icons.add_circle,
-                    color: Color(0xFF1565C0),
-                    size: 28,
-                  ),
-                  tooltip: 'Agregar materia',
-                  onPressed: () => _mostrarDialogoMateria(
-                    context: context,
-                    ref: ref,
-                    tipoIdPreseleccionado: _tipoSeleccionado!,
-                  ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.search, color: Colors.black54),
+                      tooltip: 'Mostrar buscador',
+                      onPressed: () =>
+                          setState(() => _mostrarBuscador = !_mostrarBuscador),
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.add_circle,
+                        color: Color(0xFF1565C0),
+                        size: 28,
+                      ),
+                      tooltip: 'Agregar materia',
+                      onPressed: () {
+                        if (_tipoSeleccionado != null) {
+                          _mostrarDialogoMateria(
+                            context: context,
+                            ref: ref,
+                            tipoIdPreseleccionado: _tipoSeleccionado!,
+                          );
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Buscar materia...',
-                  prefixIcon: const Icon(Icons.search),
-                  suffixIcon: _filtroTexto.isNotEmpty
-                      ? IconButton(
-                          icon: const Icon(Icons.clear),
-                          onPressed: () => setState(() => _filtroTexto = ''),
-                        )
-                      : null,
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
+          if (_mostrarBuscador)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                onChanged: (value) =>
-                    setState(() => _filtroTexto = value.trim()),
+                child: TextField(
+                  decoration: InputDecoration(
+                    hintText: 'Buscar materia...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _filtroTexto.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () => setState(() => _filtroTexto = ''),
+                          )
+                        : null,
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                  ),
+                  onChanged: (value) =>
+                      setState(() => _filtroTexto = value.trim()),
+                ),
               ),
             ),
-          ),
           tiposAsync.when(
-            data: (tipos) => Padding(
+            data: (tipos) => Container(
+              width: double.infinity,
+              alignment: Alignment.centerLeft,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Wrap(
-                spacing: 8,
+                spacing: 12,
+                runSpacing: 8,
                 children: tipos.map((tipo) {
                   final selected = _tipoSeleccionado == tipo.id;
                   return ChoiceChip(
@@ -144,7 +162,7 @@ class _MateriasPageState extends ConsumerState<MateriasPage> {
               padding: EdgeInsets.symmetric(vertical: 8),
               child: CircularProgressIndicator(),
             ),
-            error: (e, _) => Text('Error: $e'),
+            error: (e, _) => Text('Error al cargar tipos: $e'),
           ),
           Expanded(
             child: materiasAsync.when(
@@ -198,7 +216,8 @@ class _MateriasPageState extends ConsumerState<MateriasPage> {
                 );
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Error: $e')),
+              error: (e, _) =>
+                  Center(child: Text('Error al cargar materias: $e')),
             ),
           ),
         ],
@@ -269,37 +288,33 @@ class _MateriasPageState extends ConsumerState<MateriasPage> {
               title: const Text('Eliminar materia'),
               onTap: () async {
                 Navigator.pop(context);
-
-                final confirmado =
-                    await showDialog<bool>(
-                      context: context,
-                      builder: (dialogContext) => AlertDialog(
-                        title: const Text('Eliminar materia'),
-                        content: Text(
-                          '¿Estás seguro de eliminar la materia ${materia.nombre}?\n\n'
-                          'También se eliminarán todos los datos asociados, como estudiantes, calificaciones y asistencia.\n\n'
-                          'Esta acción es permanente y no se puede deshacer.',
-                          style: const TextStyle(fontSize: 14),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.pop(dialogContext, false),
-                            child: const Text('Cancelar'),
-                          ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.redAccent,
-                            ),
-                            onPressed: () => Navigator.pop(dialogContext, true),
-                            child: const Text('Eliminar'),
-                          ),
-                        ],
+                final confirmado = await showDialog<bool>(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: const Text('Eliminar materia'),
+                    content: Text(
+                      '¿Estás seguro de eliminar la materia ${materia.nombre}?\n\n'
+                      'También se eliminarán todos los datos asociados, como estudiantes, calificaciones y asistencia.\n\n'
+                      'Esta acción es permanente y no se puede deshacer.',
+                      style: const TextStyle(fontSize: 14),
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext, false),
+                        child: const Text('Cancelar'),
                       ),
-                    ) ??
-                    false;
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.redAccent,
+                        ),
+                        onPressed: () => Navigator.pop(dialogContext, true),
+                        child: const Text('Eliminar'),
+                      ),
+                    ],
+                  ),
+                );
 
-                if (!context.mounted || !confirmado) return;
+                if (!context.mounted || confirmado != true) return;
 
                 final exito = await ref
                     .read(materiasControllerProvider.notifier)
@@ -310,10 +325,7 @@ class _MateriasPageState extends ConsumerState<MateriasPage> {
                 if (exito) {
                   Notificaciones.showSuccess(context, 'Materia eliminada');
                   ref.invalidate(materiasPorTipoProvider(materia.tipoId));
-                  ref.read(materiasTriggerProvider.notifier).state++;
-                  setState(() {
-                    _filtroTexto = ''; // 🧼 Limpia el filtro tras eliminar
-                  });
+                  setState(() => _filtroTexto = '');
                 } else {
                   Notificaciones.showError(
                     context,
@@ -344,7 +356,6 @@ class _MateriasPageState extends ConsumerState<MateriasPage> {
           tipoIdPreseleccionado: tipoIdPreseleccionado,
           onGuardar: (materiaActualizada) async {
             final controller = ref.read(materiasControllerProvider.notifier);
-
             if (materia == null) {
               await controller.agregarMateria(materiaActualizada);
               if (context.mounted) {
@@ -358,10 +369,7 @@ class _MateriasPageState extends ConsumerState<MateriasPage> {
             }
 
             ref.invalidate(materiasPorTipoProvider(tipoIdPreseleccionado));
-            ref.read(materiasTriggerProvider.notifier).state++;
-            setState(() {
-              _filtroTexto = ''; // 🧼 Limpia el filtro tras guardar
-            });
+            setState(() => _filtroTexto = '');
 
             if (context.mounted) Navigator.pop(context);
           },
@@ -465,7 +473,6 @@ class _FormularioMateriaState extends ConsumerState<_FormularioMateria> {
                   TextFormField(
                     controller: _nombreCtrl,
                     textCapitalization: TextCapitalization.characters,
-                    inputFormatters: [UpperCaseTextFormatter()],
                     keyboardType: TextInputType.multiline,
                     minLines: 1,
                     maxLines: 3,

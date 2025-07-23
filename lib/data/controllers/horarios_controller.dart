@@ -4,6 +4,8 @@ import '../models/horario_expandido.dart';
 import '../models/horario_model.dart';
 import '../services/horarios_service.dart';
 import '../providers/database_provider.dart';
+import '../services/materias_curso_service.dart';
+import 'package:sqflite/sqflite.dart';
 
 final horariosControllerProvider =
     AsyncNotifierProvider.family<
@@ -15,27 +17,39 @@ final horariosControllerProvider =
 class HorariosController
     extends FamilyAsyncNotifier<List<HorarioExpandido>, String> {
   late String dia;
+  late Database db;
 
   @override
   Future<List<HorarioExpandido>> build(String diaParametro) async {
     dia = diaParametro;
+    db = await ref.watch(databaseProvider.future);
 
-    final db = await ref.watch(databaseProvider.future);
     final service = HorariosService(db);
+    final todosLosBloques = await service.obtenerExpandidoPorDia(dia);
+    return await _filtrarSoloValidos(todosLosBloques);
+  }
 
-    return service.obtenerExpandidoPorDia(dia);
+  Future<List<HorarioExpandido>> _filtrarSoloValidos(
+    List<HorarioExpandido> todos,
+  ) async {
+    final materiasService = MateriasCursoService(db);
+    final materiasCursoValidas = await materiasService.obtenerTodasActivas();
+    final idsValidos = materiasCursoValidas.map((mc) => mc.id).toSet();
+    return todos
+        .where((b) => idsValidos.contains(b.horario.materiaCursoId))
+        .toList();
   }
 
   Future<void> guardarHorario(Horario nuevo) async {
     state = const AsyncValue.loading();
 
     try {
-      final db = await ref.read(databaseProvider.future);
       final service = HorariosService(db);
-
       await service.guardar(nuevo);
+
       final actualizados = await service.obtenerExpandidoPorDia(dia);
-      state = AsyncValue.data(actualizados);
+      final filtrados = await _filtrarSoloValidos(actualizados);
+      state = AsyncValue.data(filtrados);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -45,12 +59,12 @@ class HorariosController
     state = const AsyncValue.loading();
 
     try {
-      final db = await ref.read(databaseProvider.future);
       final service = HorariosService(db);
-
       await service.eliminar(id);
+
       final actualizados = await service.obtenerExpandidoPorDia(dia);
-      state = AsyncValue.data(actualizados);
+      final filtrados = await _filtrarSoloValidos(actualizados);
+      state = AsyncValue.data(filtrados);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
@@ -64,9 +78,7 @@ class HorariosController
     state = const AsyncValue.loading();
 
     try {
-      final db = await ref.read(databaseProvider.future);
       final service = HorariosService(db);
-
       final existente = await service.obtenerPorDiaYHora(dia, hora);
 
       if (existente != null) {
@@ -88,7 +100,8 @@ class HorariosController
       }
 
       final actualizados = await service.obtenerExpandidoPorDia(dia);
-      state = AsyncValue.data(actualizados);
+      final filtrados = await _filtrarSoloValidos(actualizados);
+      state = AsyncValue.data(filtrados);
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
