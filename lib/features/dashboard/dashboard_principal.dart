@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 
 import '../../data/providers/periodo_activo_provider.dart';
+import '../../data/providers/license_provider.dart';
+import '../../features/license/license_storage.dart';
+import '../../shared/utils/texto_normalizado.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -17,21 +20,52 @@ class DashboardPage extends StatelessWidget {
         }
       },
       child: Scaffold(
-        appBar: AppBar(title: const Text("Dashboard")),
+        backgroundColor: Colors.white,
         body: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.fromLTRB(16, 64, 16, 16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                "Bienvenido",
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue.shade900,
-                ),
+              Consumer(
+                builder: (context, ref, _) {
+                  final nombreAsync = ref.watch(nombrePropietarioProvider);
+
+                  return nombreAsync.when(
+                    data: (nombreRaw) {
+                      final nombre = capitalizarTituloConTildes(
+                        nombreRaw ?? 'Usuario',
+                      );
+
+                      return Column(
+                        children: [
+                          Text(
+                            'Bienvenido',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade900,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            nombre,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Colors.black45,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                    loading: () => const CircularProgressIndicator(),
+                    error: (e, _) => const Text('Error al cargar nombre'),
+                  );
+                },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
               _buildPeriodosCard(context),
               const SizedBox(height: 10),
               Expanded(child: _buildGridMenu(context)),
@@ -106,7 +140,7 @@ class DashboardPage extends StatelessWidget {
       "Notas": Colors.orange.shade300,
       "Asistencia": Colors.pink.shade300,
       "Reportes": Colors.green.shade400,
-      "Mi horario": Colors.blue.shade300, // Color para el nuevo ítem
+      "Mi horario": Colors.blue.shade300,
     };
 
     return GridView.builder(
@@ -174,25 +208,61 @@ class DashboardPage extends StatelessWidget {
   }
 
   void _mostrarDialogoSalida(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Confirmar salida"),
-        content: const Text("¿Seguro que deseas salir de la aplicación?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("No"),
+    ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
+
+    LicenseStorage.getNombreUsuario().then((nombre) {
+      final nombreElegante = capitalizarTituloConTildes(nombre ?? 'Usuario');
+
+      if (!context.mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              SystemNavigator.pop();
-            },
-            child: const Text("Sí"),
+          title: const Text(
+            'Confirmación',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
-        ],
-      ),
-    );
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Estás a punto de cerrar la aplicación.',
+                style: TextStyle(fontSize: 14),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '👋 ¡Hasta pronto, $nombreElegante!',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black54,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => navigator.pop(),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+              ),
+              onPressed: () {
+                navigator.pop();
+                SystemNavigator.pop();
+              },
+              child: const Text('Salir'),
+            ),
+          ],
+        ),
+      );
+    });
   }
 }

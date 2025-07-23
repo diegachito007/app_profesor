@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../features/license/license_storage.dart';
+import '../license/license_storage.dart';
 import '../../data/providers/database_provider.dart';
 
 Future<void> iniciarValidacionProfeshor(

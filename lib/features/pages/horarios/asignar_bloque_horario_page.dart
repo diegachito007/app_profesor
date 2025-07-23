@@ -37,16 +37,17 @@ class _AsignarBloqueHorarioPageState
   @override
   Widget build(BuildContext context) {
     final materiasAsync = ref.watch(materiasCursoGlobalProvider);
-    final messenger = ScaffoldMessenger.of(context);
-    final navigator = Navigator.of(context);
+    ScaffoldMessenger.of(context);
+    Navigator.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: const Color(0xFF1565C0),
+        centerTitle: true,
         title: const Text(
-          'Asignar bloque horario',
+          'Asignar al horario',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w600,
@@ -84,44 +85,29 @@ class _AsignarBloqueHorarioPageState
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 12),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.blue.shade100),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 3,
-                        offset: Offset(0, 1),
+              Container(
+                color: Colors.white,
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.schedule_outlined,
+                      color: Colors.black54,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      'Día: ${widget.dia} · Hora: ${widget.hora}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
                       ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.schedule_outlined,
-                        color: Colors.blue[600],
-                        size: 22,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'Día: ${widget.dia}  •  Hora: ${widget.hora}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.blue[600],
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
               Expanded(
@@ -136,9 +122,7 @@ class _AsignarBloqueHorarioPageState
                     final nombreMateria = capitalizarTituloConTildes(
                       mc.nombreMateria ?? 'Materia',
                     );
-                    final nombreCurso = capitalizarTituloConTildes(
-                      mc.nombreCursoCompleto,
-                    );
+                    final nombreCurso = mc.nombreCursoCompleto;
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: 12),
@@ -146,17 +130,13 @@ class _AsignarBloqueHorarioPageState
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(color: Colors.blue.shade100),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
                       ),
                       child: InkWell(
                         borderRadius: BorderRadius.circular(14),
                         onTap: () async {
+                          final messenger = ScaffoldMessenger.of(context);
+                          final navigator = Navigator.of(context);
+
                           await ref
                               .read(
                                 horariosControllerProvider(widget.dia).notifier,
@@ -190,10 +170,10 @@ class _AsignarBloqueHorarioPageState
                             children: [
                               Text(
                                 nombreCurso,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   fontSize: 16.5,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.blue[600],
+                                  color: Colors.indigo,
                                 ),
                               ),
                               const SizedBox(height: 6),
@@ -201,7 +181,6 @@ class _AsignarBloqueHorarioPageState
                                 nombreMateria,
                                 style: const TextStyle(
                                   fontSize: 14,
-                                  fontWeight: FontWeight.w500,
                                   color: Colors.black87,
                                 ),
                               ),

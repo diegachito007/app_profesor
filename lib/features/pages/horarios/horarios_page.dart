@@ -5,6 +5,7 @@ import '../../../data/controllers/horarios_controller.dart';
 import '../../../data/models/horario_expandido.dart';
 import '../../../data/models/horario_model.dart';
 import '../../../routes/app_routes.dart';
+import '../../../shared/utils/texto_normalizado.dart';
 
 class HorariosPage extends ConsumerWidget {
   const HorariosPage({super.key});
@@ -153,10 +154,11 @@ class HorariosPage extends ConsumerWidget {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            bloque.nombreMateriaFinal,
+                            capitalizarTituloConTildes(
+                              bloque.nombreMateriaFinal,
+                            ),
                             style: TextStyle(
                               fontSize: 14,
-                              fontWeight: FontWeight.w500,
                               color: esActivo ? Colors.black87 : Colors.black45,
                             ),
                           ),

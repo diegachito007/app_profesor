@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
-import '../../shared/utils/validacion_profeshor.dart';
+import 'validacion_profeshor.dart';
 import '../../features/license/license_storage.dart';
 
 class HomePage extends ConsumerStatefulWidget {
