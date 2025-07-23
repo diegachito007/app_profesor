@@ -7,7 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'validacion_profeshor.dart';
-import '../../features/license/license_storage.dart';
+import 'license/license_storage.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -37,6 +37,11 @@ class _HomePageState extends ConsumerState<HomePage> {
               tooltip: 'Borrar base de datos',
               onPressed: () => _confirmarBorradoDB(context),
             ),
+            IconButton(
+              icon: const Icon(Icons.upload_file),
+              tooltip: 'Exportar base de datos',
+              onPressed: () => _exportarBaseDeDatos(context),
+            ),
           ],
         ),
         body: Center(
@@ -56,6 +61,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   },
                   child: ElevatedButton.icon(
                     label: const Text('Iniciar'),
+                    icon: const Icon(Icons.login),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 32,
@@ -97,12 +103,10 @@ class _HomePageState extends ConsumerState<HomePage> {
               Navigator.pop(context);
 
               try {
-                // Cierra la base de datos si está abierta
                 final db = await ref.read(databaseProvider.future);
                 await db.close();
                 debugPrint('📦 Base de datos cerrada correctamente');
 
-                // Elimina el archivo físico
                 final dir = await getApplicationDocumentsDirectory();
                 final path = p.join(dir.path, 'profeshor.db');
                 final dbFile = File(path);
@@ -185,5 +189,56 @@ class _HomePageState extends ConsumerState<HomePage> {
         ],
       ),
     );
+  }
+
+  Future<void> _exportarBaseDeDatos(BuildContext context) async {
+    try {
+      final origen = await getApplicationDocumentsDirectory();
+      final origenPath = p.join(origen.path, 'profeshor.db');
+      final origenFile = File(origenPath);
+
+      if (!await origenFile.exists()) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No se encontró la base de datos')),
+          );
+        }
+        return;
+      }
+
+      final destino = await getExternalStorageDirectory();
+      if (destino == null) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No se pudo acceder al almacenamiento externo'),
+            ),
+          );
+        }
+        return;
+      }
+
+      final destinoPath = p.join(destino.path, 'profeshor_export.db');
+      await origenFile.copy(destinoPath);
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Base de datos exportada a:\n$destinoPath'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('⚠️ Error al exportar la base de datos: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error al exportar la base de datos:\n$e'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
+    }
   }
 }

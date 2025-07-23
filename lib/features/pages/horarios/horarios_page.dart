@@ -171,7 +171,7 @@ class HorariosPage extends ConsumerWidget {
                         onPressed: () {
                           Navigator.pushNamed(
                             context,
-                            AppRoutes.editarHorario,
+                            AppRoutes.asignarHorario,
                             arguments: {
                               'dia': dia,
                               'hora': hora,
@@ -255,6 +255,23 @@ class HorariosPage extends ConsumerWidget {
                           }
                         },
                       ),
+                onTap: !estaVacio
+                    ? () {
+                        Navigator.pushNamed(
+                          context,
+                          AppRoutes.jornada,
+                          arguments: {
+                            'cursoId': bloque.materiaCurso?.cursoId ?? 0,
+                            'curso': bloque.nombreCursoFinal,
+                            'materia': bloque.nombreMateriaFinal,
+                            'dia': dia,
+                            'hora': hora.toString(),
+                            'bloqueId':
+                                '${bloque.materiaCurso?.cursoId}-${bloque.materiaCurso?.materiaId}-$dia-$hora',
+                          },
+                        );
+                      }
+                    : null,
               ),
             );
           },

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 // Páginas principales
 import '../features/home/home.dart';
-import '../features/license/license.dart';
+import '../features/home/license/license.dart';
 import '../features/dashboard/dashboard_principal.dart';
 
 // Páginas de gestión
@@ -14,7 +14,7 @@ import '../features/pages/materias_curso/materias_curso_page.dart';
 import '../features/pages/estudiantes/estudiantes_page.dart';
 import '../features/pages/horarios/horarios_page.dart';
 import '../features/pages/horarios/asignar_bloque_horario_page.dart';
-// import '../features/pages/registro/registro_page.dart';
+import '../features/jornada/jornada.dart'; // 👈 nuevo import
 
 import '../data/models/curso_model.dart';
 
@@ -32,8 +32,8 @@ class AppRoutes {
   static const String estudiantes = '/estudiantes';
 
   static const String horario = '/horario';
-  static const String editarHorario = '/editar-horario';
-  // static const String registro = '/registro';
+  static const String asignarHorario = '/asignar-horario';
+  static const String jornada = '/jornada'; // 👈 nueva ruta
 
   // 🧭 Generador de rutas
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -71,13 +71,26 @@ class AppRoutes {
       case horario:
         return MaterialPageRoute(builder: (_) => const HorariosPage());
 
-      case editarHorario:
+      case asignarHorario:
         final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
           builder: (_) => AsignarBloqueHorarioPage(
             dia: args['dia'] as String,
             hora: args['hora'] as int,
-            seleccionada: args['horario'], // opcional: MateriaCurso ya asignada
+            seleccionada: args['horario'], // opcional
+          ),
+        );
+
+      case jornada:
+        final args = settings.arguments as Map<String, dynamic>;
+        return MaterialPageRoute(
+          builder: (_) => JornadaPage(
+            cursoId: args['cursoId'] as int,
+            curso: args['curso'] as String,
+            materia: args['materia'] as String,
+            dia: args['dia'] as String,
+            hora: args['hora'] as String,
+            bloqueId: args['bloqueId'] as String,
           ),
         );
     }

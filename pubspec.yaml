@@ -60,3 +60,9 @@ flutter:
 
 dev_dependencies:
   flutter_lints: ^2.0.0
+  flutter_launcher_icons: ^0.13.1 # 👈 nuevo
+
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: "assets/images/logo.png" # 👈 usa tu logo actual o reemplaza por uno cuadrado

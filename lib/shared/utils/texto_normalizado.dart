@@ -105,3 +105,9 @@ String capitalizarTituloConTildes(String texto) {
       })
       .join(' ');
 }
+
+/// 👤 Capitaliza nombre completo en formato "Apellidos Nombres"
+String capitalizarNombreCompleto(String nombre, String apellido) {
+  final texto = '${apellido.trim()} ${nombre.trim()}';
+  return capitalizarConTildes(texto);
+}

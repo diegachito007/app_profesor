@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../data/providers/periodo_activo_provider.dart';
 import '../../data/providers/license_provider.dart';
-import '../../features/license/license_storage.dart';
+import '../home/license/license_storage.dart';
 import '../../shared/utils/texto_normalizado.dart';
 
 class DashboardPage extends StatelessWidget {

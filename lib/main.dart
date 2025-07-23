@@ -3,7 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import './features/license/config.dart';
+import 'features/home/license/config.dart';
 import 'routes/app_routes.dart';
 import 'shared/theme/app_theme.dart';
 
