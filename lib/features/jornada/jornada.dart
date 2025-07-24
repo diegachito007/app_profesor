@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'asistencia.dart';
-// import 'notas.dart';
-// import 'actividades.dart';
-// import 'evaluaciones.dart';
+import 'asistencias.dart';
+import '../../../shared/utils/texto_normalizado.dart';
 
 class JornadaPage extends StatefulWidget {
   final int cursoId;
@@ -28,28 +26,64 @@ class JornadaPage extends StatefulWidget {
 
 class _JornadaPageState extends State<JornadaPage> {
   int _index = 0;
+  bool _vistaHorizontal = false;
 
-  final List<String> _titulos = [
-    'Asistencia',
-    'Notas',
-    'Actividades',
-    'Evaluaciones',
-  ];
+  final List<String> _titulos = ['Asistencias', 'Notas', 'Faltas', 'Resumen'];
 
   @override
   Widget build(BuildContext context) {
-    // 🧠 Extraer materiaCursoId y materiaId desde bloqueId
     final partes = widget.bloqueId.split('-');
     final materiaCursoId = partes.length >= 2
         ? int.tryParse(partes[1]) ?? 0
         : 0;
-    final materiaId = partes.length >= 2 ? int.tryParse(partes[1]) ?? 0 : 0;
+
+    final mostrarBotonGuardar = _index == 0;
+    final botonGuardar = mostrarBotonGuardar
+        ? ElevatedButton.icon(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Asistencia guardada')),
+              );
+            },
+            icon: const Icon(Icons.save, size: 16),
+            label: const Text('Guardar'),
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              textStyle: const TextStyle(fontSize: 13),
+              backgroundColor: Colors.blueAccent,
+            ),
+          )
+        : null;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_titulos[_index]),
-        backgroundColor: Colors.indigo,
+        backgroundColor: const Color(0xFF1565C0),
         elevation: 0,
+        centerTitle: true,
+        title: Text(
+          _titulos[_index],
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        iconTheme: const IconThemeData(color: Colors.white),
+        actions: _index == 0
+            ? [
+                IconButton(
+                  icon: Icon(
+                    _vistaHorizontal ? Icons.view_agenda : Icons.view_carousel,
+                    color: Colors.white,
+                  ),
+                  tooltip: _vistaHorizontal
+                      ? 'Vista vertical'
+                      : 'Vista horizontal',
+                  onPressed: () =>
+                      setState(() => _vistaHorizontal = !_vistaHorizontal),
+                ),
+              ]
+            : null,
       ),
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -63,22 +97,24 @@ class _JornadaPageState extends State<JornadaPage> {
                 materia: widget.materia,
                 dia: widget.dia,
                 hora: widget.hora,
-                cursoId: widget.cursoId,
-                materiaId: materiaId,
+                botonAccion: botonGuardar, // ✅ aquí va el botón
               ),
               const SizedBox(height: 24),
               Expanded(
                 child: IndexedStack(
                   index: _index,
                   children: [
-                    AsistenciaSection(
+                    AsistenciasSection(
                       cursoId: widget.cursoId,
                       materiaCursoId: materiaCursoId,
                       hora: int.parse(widget.hora),
+                      materia: widget.materia,
+                      dia: widget.dia,
+                      vistaHorizontal: _vistaHorizontal,
                     ),
                     const Center(child: Text('Notas (en construcción)')),
-                    const Center(child: Text('Actividades (en construcción)')),
-                    const Center(child: Text('Evaluaciones (en construcción)')),
+                    const Center(child: Text('Faltas (en construcción)')),
+                    const Center(child: Text('Resumen (en construcción)')),
                   ],
                 ),
               ),
@@ -99,12 +135,12 @@ class _JornadaPageState extends State<JornadaPage> {
           ),
           BottomNavigationBarItem(icon: Icon(Icons.edit_note), label: 'Notas'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.task_alt),
-            label: 'Actividades',
+            icon: Icon(Icons.event_busy),
+            label: 'Faltas',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.bar_chart),
-            label: 'Evaluaciones',
+            icon: Icon(Icons.receipt_long),
+            label: 'Resumen',
           ),
         ],
       ),
@@ -117,8 +153,7 @@ class EncabezadoJornada extends StatelessWidget {
   final String materia;
   final String dia;
   final String hora;
-  final int cursoId;
-  final int materiaId;
+  final Widget? botonAccion;
 
   const EncabezadoJornada({
     super.key,
@@ -126,8 +161,7 @@ class EncabezadoJornada extends StatelessWidget {
     required this.materia,
     required this.dia,
     required this.hora,
-    required this.cursoId,
-    required this.materiaId,
+    this.botonAccion,
   });
 
   @override
@@ -136,31 +170,36 @@ class EncabezadoJornada extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '$curso ($cursoId)',
+          curso,
           style: const TextStyle(
             fontSize: 16.5,
             fontWeight: FontWeight.bold,
             color: Colors.indigo,
           ),
         ),
-        const SizedBox(height: 4),
         Text(
-          '$materia ($materiaId)',
+          capitalizarTituloConTildes(materia),
           style: const TextStyle(fontSize: 14, color: Colors.black87),
         ),
         const SizedBox(height: 12),
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Icon(
-              Icons.schedule_outlined,
-              color: Colors.black54,
-              size: 20,
+            Row(
+              children: [
+                const Icon(
+                  Icons.schedule_outlined,
+                  color: Colors.black54,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Día: $dia · Hora: $hora',
+                  style: const TextStyle(fontSize: 13.5, color: Colors.black54),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Text(
-              'Día: $dia · Hora: $hora',
-              style: const TextStyle(fontSize: 13.5, color: Colors.black54),
-            ),
+            if (botonAccion != null) botonAccion!,
           ],
         ),
       ],

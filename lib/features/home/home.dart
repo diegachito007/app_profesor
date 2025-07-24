@@ -1,13 +1,14 @@
 import 'dart:io';
-import 'package:app_profesor/data/providers/database_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'validacion_profeshor.dart';
 import 'license/license_storage.dart';
+import 'package:app_profesor/data/providers/database_provider.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -39,8 +40,8 @@ class _HomePageState extends ConsumerState<HomePage> {
             ),
             IconButton(
               icon: const Icon(Icons.upload_file),
-              tooltip: 'Exportar base de datos',
-              onPressed: () => _exportarBaseDeDatos(context),
+              tooltip: 'Compartir base de datos',
+              onPressed: () => _compartirBaseDeDatos(context),
             ),
           ],
         ),
@@ -191,7 +192,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     );
   }
 
-  Future<void> _exportarBaseDeDatos(BuildContext context) async {
+  Future<void> _compartirBaseDeDatos(BuildContext context) async {
     try {
       final origen = await getApplicationDocumentsDirectory();
       final origenPath = p.join(origen.path, 'profeshor.db');
@@ -206,35 +207,24 @@ class _HomePageState extends ConsumerState<HomePage> {
         return;
       }
 
-      final destino = await getExternalStorageDirectory();
-      if (destino == null) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('No se pudo acceder al almacenamiento externo'),
-            ),
-          );
-        }
-        return;
-      }
-
-      final destinoPath = p.join(destino.path, 'profeshor_export.db');
-      await origenFile.copy(destinoPath);
+      await Share.shareXFiles([
+        XFile(origenPath),
+      ], text: 'Aquí está la base de datos de Profeshor.');
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Base de datos exportada a:\n$destinoPath'),
+          const SnackBar(
+            content: Text('Archivo preparado para compartir.'),
             backgroundColor: Colors.green,
           ),
         );
       }
     } catch (e) {
-      debugPrint('⚠️ Error al exportar la base de datos: $e');
+      debugPrint('⚠️ Error al compartir la base de datos: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error al exportar la base de datos:\n$e'),
+            content: Text('Error al compartir la base de datos:\n$e'),
             backgroundColor: Colors.orange,
           ),
         );

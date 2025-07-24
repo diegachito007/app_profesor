@@ -1,5 +1,5 @@
 import 'package:sqflite/sqflite.dart';
-import '../../models/jornada/asistencia_model.dart';
+import '../../models/jornada/asistencias_model.dart';
 
 class AsistenciaService {
   final Database db;

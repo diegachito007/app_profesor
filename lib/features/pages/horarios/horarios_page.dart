@@ -30,8 +30,11 @@ class HorariosPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final int indiceDiaActual = _obtenerIndiceDiaActual();
+
     return DefaultTabController(
       length: dias.length,
+      initialIndex: indiceDiaActual, // ✅ selecciona el día actual
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: const Color(0xFF1565C0),
@@ -66,6 +69,12 @@ class HorariosPage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  int _obtenerIndiceDiaActual() {
+    final hoy = DateTime.now().weekday;
+    // Lunes = 1 → índice 0
+    return hoy >= 1 && hoy <= 5 ? hoy - 1 : 0;
   }
 
   Widget _buildDiaView(BuildContext context, WidgetRef ref, String dia) {

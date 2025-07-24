@@ -1,18 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../models/jornada/asistencia_model.dart';
-import '../../services/jornada/asistencia_service.dart';
+import '../../models/jornada/asistencias_model.dart';
+import '../../services/jornada/asistencias_service.dart';
 import '../../services/estudiantes_service.dart';
 import '../../providers/database_provider.dart';
-import '../../providers/jornada/asistencia_trigger_provider.dart';
+import '../../providers/jornada/asistencias_trigger_provider.dart';
 import '../../../shared/utils/texto_normalizado.dart';
 
 /// 🔹 Parámetros para inicializar el controlador
-class JornadaParams {
+class AsistenciasParams {
   final int cursoId;
   final int materiaCursoId;
   final int hora;
 
-  JornadaParams({
+  AsistenciasParams({
     required this.cursoId,
     required this.materiaCursoId,
     required this.hora,
@@ -20,20 +20,20 @@ class JornadaParams {
 }
 
 /// 🔹 Provider reactivo por bloque
-final jornadaControllerProvider =
+final asistenciasControllerProvider =
     AsyncNotifierProviderFamily<
-      JornadaController,
+      AsistenciasController,
       List<AsistenciaModel>,
-      JornadaParams
-    >(JornadaController.new);
+      AsistenciasParams
+    >(AsistenciasController.new);
 
-class JornadaController
-    extends FamilyAsyncNotifier<List<AsistenciaModel>, JornadaParams> {
+class AsistenciasController
+    extends FamilyAsyncNotifier<List<AsistenciaModel>, AsistenciasParams> {
   late AsistenciaService _asistenciaService;
   late EstudiantesService _estudiantesService;
 
   @override
-  Future<List<AsistenciaModel>> build(JornadaParams params) async {
+  Future<List<AsistenciaModel>> build(AsistenciasParams params) async {
     final db = await ref.watch(databaseProvider.future);
     _asistenciaService = AsistenciaService(db);
     _estudiantesService = EstudiantesService(db);
@@ -78,7 +78,7 @@ class JornadaController
     required String fecha,
     required int estudianteId,
     required String estado,
-    required JornadaParams params,
+    required AsistenciasParams params,
   }) async {
     final existente = await _asistenciaService.obtenerPorEstudianteYBloque(
       estudianteId: estudianteId,
@@ -118,7 +118,7 @@ class JornadaController
     required String fechaRegistro,
     required String foto,
     String? comentario,
-    required JornadaParams params,
+    required AsistenciasParams params,
   }) async {
     final existente = await _asistenciaService.obtenerPorEstudianteYBloque(
       estudianteId: estudianteId,
