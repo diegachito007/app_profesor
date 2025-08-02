@@ -29,15 +29,15 @@ class _HorariosPageState extends ConsumerState<HorariosPage> {
   late final PageController _semanaController;
   late final List<List<DateTime>> semanas;
 
-  int semanaActualIndex = 3;
-  int diaVisibleIndex = DateTime.now().weekday - 1;
+  late int semanaActualIndex;
+  late int diaVisibleIndex;
   final Set<String> _snackBarQueue = {};
 
   @override
   void initState() {
     super.initState();
-    _semanaController = PageController(initialPage: semanaActualIndex);
 
+    // Genera las semanas primero
     semanas = List.generate(7, (i) {
       final base = obtenerLunesDeSemana(
         DateTime.now(),
@@ -45,8 +45,18 @@ class _HorariosPageState extends ConsumerState<HorariosPage> {
       return dias.map((dia) => obtenerFechaDelDia(dia, base)).toList();
     });
 
+    // Calcula la semana actual (con fallback si es fin de semana)
     semanaActualIndex = obtenerSemanaActualIndex();
-    diaVisibleIndex = obtenerDiaInicial(semanaActualIndex);
+
+    final hoy = DateTime.now();
+    final weekday = hoy.weekday;
+
+    // Si es sábado o domingo, mostrar viernes
+    diaVisibleIndex = weekday >= 6 ? 4 : weekday - 1;
+    diaVisibleIndex = diaVisibleIndex.clamp(0, dias.length - 1);
+
+    // Inicializa el controlador con la semana correcta
+    _semanaController = PageController(initialPage: semanaActualIndex);
   }
 
   DateTime obtenerLunesDeSemana(DateTime referencia) {
@@ -68,9 +78,12 @@ class _HorariosPageState extends ConsumerState<HorariosPage> {
 
   int obtenerSemanaActualIndex() {
     final hoy = DateTime.now();
-    return semanas.indexWhere(
+    final index = semanas.indexWhere(
       (semana) => semana.any((d) => esMismoDia(d, hoy)),
     );
+
+    // Si no encuentra el día (sábado o domingo), devuelve la semana más reciente
+    return index != -1 ? index : 3; // 3 es la semana actual en tu lógica
   }
 
   int obtenerDiaInicial(int semanaIndex) {

@@ -83,15 +83,52 @@ Future<void> _crearTablas(Database db) async {
   ''');
 
   await db.execute('''
-    CREATE TABLE evaluaciones (
+    CREATE TABLE horario_clase (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      tipo TEXT NOT NULL,
-      descripcion TEXT,
-      fecha TEXT NOT NULL,
+      dia TEXT NOT NULL,
+      hora INTEGER NOT NULL,
       materia_curso_id INTEGER NOT NULL,
-      ponderacion REAL NOT NULL CHECK(ponderacion BETWEEN 0 AND 100),
-      trimestre TEXT NOT NULL CHECK(trimestre IN ('1', '2', '3')),
       FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
+    );
+  ''');
+
+  await db.execute('''
+    CREATE TABLE jornadas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      materia_curso_id INTEGER NOT NULL,
+      fecha TEXT NOT NULL,
+      hora INTEGER NOT NULL,
+      estado TEXT NOT NULL CHECK(estado IN ('activa', 'suspendida')),
+      detalle TEXT,
+      creado_en TEXT NOT NULL,
+      FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
+    );
+  ''');
+
+  await db.execute('''
+    CREATE TABLE asistencias (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      fecha TEXT NOT NULL,
+      estudiante_id INTEGER NOT NULL,
+      materia_curso_id INTEGER NOT NULL,
+      hora INTEGER NOT NULL,
+      estado TEXT NOT NULL CHECK(estado IN ('presente', 'ausente', 'justificado')),
+      detalle TEXT,
+      fecha_justificacion TEXT,
+      foto_justificacion TEXT,
+      detalle_justificacion TEXT,
+      FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE,
+      FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
+    );
+  ''');
+
+  await db.execute('''
+    CREATE TABLE tipo_notas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nombre TEXT NOT NULL UNIQUE,
+      prefijo TEXT NOT NULL,
+      activo INTEGER NOT NULL DEFAULT 1 CHECK(activo IN (0, 1)),
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
   ''');
 
@@ -99,12 +136,16 @@ Future<void> _crearTablas(Database db) async {
     CREATE TABLE notas (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       estudiante_id INTEGER NOT NULL,
-      evaluacion_id INTEGER NOT NULL,
+      tipo_nota_id INTEGER NOT NULL,
+      materia_curso_id INTEGER NOT NULL,
+      tema TEXT NOT NULL,
       nota REAL NOT NULL CHECK(nota BETWEEN 0 AND 10),
       estado TEXT CHECK(estado IN ('Regular', 'Recuperado', 'No asistió')),
+      fecha TEXT NOT NULL,
       fecha_recuperacion TEXT,
       FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE,
-      FOREIGN KEY (evaluacion_id) REFERENCES evaluaciones(id) ON DELETE CASCADE
+      FOREIGN KEY (tipo_nota_id) REFERENCES tipo_notas(id) ON DELETE CASCADE,
+      FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
     );
   ''');
 
@@ -120,36 +161,6 @@ Future<void> _crearTablas(Database db) async {
   ''');
 
   await db.execute('''
-  CREATE TABLE jornadas (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    materia_curso_id INTEGER NOT NULL,
-    fecha TEXT NOT NULL,
-    hora INTEGER NOT NULL,
-    estado TEXT NOT NULL CHECK(estado IN ('activa', 'suspendida')),
-    detalle TEXT,
-    creado_en TEXT NOT NULL,
-    FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
-  );
-''');
-
-  await db.execute('''
-  CREATE TABLE asistencias (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    fecha TEXT NOT NULL,
-    estudiante_id INTEGER NOT NULL,
-    materia_curso_id INTEGER NOT NULL,
-    hora INTEGER NOT NULL,
-    estado TEXT NOT NULL CHECK(estado IN ('presente', 'ausente', 'justificado')),
-    detalle TEXT,
-    fecha_justificacion TEXT,
-    foto_justificacion TEXT,
-    detalle_justificacion TEXT,
-    FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE,
-    FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
-  );
-''');
-
-  await db.execute('''
     CREATE TABLE visitas_padres (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       estudiante_id INTEGER NOT NULL,
@@ -158,17 +169,6 @@ Future<void> _crearTablas(Database db) async {
       motivo TEXT,
       firma TEXT,
       FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE
-    );
-  ''');
-
-  await db.execute('''
-    CREATE TABLE temas_personalizados (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      materia_curso_id INTEGER NOT NULL,
-      curso_id INTEGER NOT NULL,
-      titulo TEXT NOT NULL,
-      FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE,
-      FOREIGN KEY (curso_id) REFERENCES cursos(id) ON DELETE CASCADE
     );
   ''');
 
@@ -182,22 +182,9 @@ Future<void> _crearTablas(Database db) async {
     );
   ''');
 
-  await db.execute('''
-    CREATE TABLE horario_clase (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      dia TEXT NOT NULL,
-      hora INTEGER NOT NULL,
-      materia_curso_id INTEGER NOT NULL,
-      FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
-    );
-  ''');
-
   await db.execute('CREATE INDEX idx_materias_nombre ON materias(nombre);');
   await db.execute(
     'CREATE INDEX idx_estudiantes_curso ON estudiantes(curso_id);',
-  );
-  await db.execute(
-    'CREATE INDEX idx_evaluaciones_materia ON evaluaciones(materia_curso_id);',
   );
   await db.execute(
     'CREATE INDEX idx_notas_estudiante ON notas(estudiante_id);',
@@ -211,6 +198,7 @@ Future<void> _crearTablas(Database db) async {
 
   await _insertarTiposMateria(db);
   await _insertarMateriasPorDefecto(db);
+  await _insertarTipoNotasPorDefecto(db); // ✅ NUEVA FUNCIÓN
 }
 
 Future<void> _insertarTiposMateria(Database db) async {
@@ -302,5 +290,26 @@ Future<void> _insertarMateriasPorDefecto(Database db) async {
         }
       }
     }
+  }
+}
+
+Future<void> _insertarTipoNotasPorDefecto(Database db) async {
+  final tipos = [
+    {'nombre': 'Tareas', 'prefijo': 'T'},
+    {'nombre': 'Lecciones', 'prefijo': 'L'},
+    {'nombre': 'Trabajo Grupal', 'prefijo': 'Tg'},
+    {'nombre': 'Trabajo Individual', 'prefijo': 'Ti'},
+    {'nombre': 'Evaluaciones', 'prefijo': 'E'},
+    {'nombre': 'Examen Acumulativo', 'prefijo': 'Ex'},
+    {'nombre': 'Supletorio', 'prefijo': 'S'},
+    {'nombre': 'Proyecto Interdisciplinario', 'prefijo': 'Pi'},
+  ];
+
+  for (final tipo in tipos) {
+    await db.insert(
+      'tipo_notas',
+      tipo,
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
   }
 }
