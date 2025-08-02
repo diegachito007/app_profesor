@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/controllers/asistencias_controller.dart';
 import '../../data/controllers/estudiantes_controller.dart';
+import '../../data/models/estudiante_model.dart';
 import '../../data/providers/asistencias_provider.dart';
 
 class AsistenciasSection extends ConsumerWidget {
@@ -11,7 +12,6 @@ class AsistenciasSection extends ConsumerWidget {
   final int hora;
   final String materia;
   final String dia;
-  final bool vistaHorizontal;
   final DateTime fecha;
 
   const AsistenciasSection({
@@ -21,14 +21,12 @@ class AsistenciasSection extends ConsumerWidget {
     required this.hora,
     required this.materia,
     required this.dia,
-    required this.vistaHorizontal,
     required this.fecha,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final fechaTexto = fecha.toIso8601String().substring(0, 10);
-
     final params = AsistenciasParams(
       cursoId: cursoId,
       materiaCursoId: materiaCursoId,
@@ -68,36 +66,74 @@ class AsistenciasSection extends ConsumerWidget {
       conteo[estado] = conteo[estado]! + 1;
     }
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _contadorChip(
-                  'Presente',
-                  conteo[EstadoAsistencia.presente]!,
-                  Colors.green,
+    final GlobalKey tarjetaKey = GlobalKey();
+
+    return Column(
+      children: [
+        // Tarjeta invisible para medir alto real
+        Offstage(
+          child: Container(
+            key: tarjetaKey,
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.transparent),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 10,
+              ),
+              title: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Apellido',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                  Text('Nombre', style: TextStyle(fontSize: 14)),
+                ],
+              ),
+              trailing: SizedBox(
+                width: 100,
+                child: ElevatedButton.icon(
+                  onPressed: null,
+                  icon: const Icon(Icons.check, size: 18),
+                  label: const Text('Presente', style: TextStyle(fontSize: 13)),
                 ),
-                _contadorChip(
-                  'Ausente',
-                  conteo[EstadoAsistencia.ausente]!,
-                  Colors.redAccent,
-                ),
-                _contadorChip(
-                  'Justificado',
-                  conteo[EstadoAsistencia.justificado]!,
-                  Colors.orange,
-                ),
-              ],
+              ),
             ),
           ),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const ClampingScrollPhysics(),
+        ),
+
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _contadorChip(
+                'Presente',
+                conteo[EstadoAsistencia.presente]!,
+                Colors.green,
+              ),
+              _contadorChip(
+                'Ausente',
+                conteo[EstadoAsistencia.ausente]!,
+                Colors.redAccent,
+              ),
+              _contadorChip(
+                'Justificado',
+                conteo[EstadoAsistencia.justificado]!,
+                Colors.orange,
+              ),
+            ],
+          ),
+        ),
+
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.only(bottom: 16),
             itemCount: estudiantes.length,
             itemBuilder: (_, index) {
               final est = estudiantes[index];
@@ -112,114 +148,124 @@ class AsistenciasSection extends ConsumerWidget {
                     asistenciaPorEstudianteProvider(estudianteParams),
                   );
 
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: _colorEstado(
-                          estado,
-                        ).withAlpha((0.4 * 255).round()),
-                        width: 1.2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withAlpha((0.1 * 255).round()),
-                          blurRadius: 3,
-                          offset: const Offset(0, 1),
-                        ),
-                      ],
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      title: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            capitalizarConTildes(est.apellido),
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            capitalizarConTildes(est.nombre),
-                            style: const TextStyle(fontSize: 14),
-                          ),
-                        ],
-                      ),
-                      trailing: Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ElevatedButton.icon(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _colorEstado(estado),
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                          ),
-                          icon: Icon(_iconoEstado(estado), size: 18),
-                          label: Text(
-                            _textoEstado(estado),
-                            style: const TextStyle(fontSize: 13),
-                          ),
-                          onPressed: () async {
-                            final nuevoEstado =
-                                EstadoAsistencia.values[(estado.index + 1) %
-                                    EstadoAsistencia.values.length];
-
-                            final controller = ref.read(
-                              asistenciasControllerProvider(params).notifier,
-                            );
-
-                            try {
-                              await controller.registrarAsistencia(
-                                fecha: fechaTexto,
-                                estudianteId: est.id,
-                                estado: nuevoEstado.name,
-                                params: params,
-                              );
-                            } catch (e, st) {
-                              if (context.mounted) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(
-                                      '❌ Error: $e\n${st.toString().split('\n').take(3).join('\n')}',
-                                    ),
-                                    backgroundColor: Colors.redAccent,
-                                    duration: const Duration(seconds: 4),
-                                  ),
-                                );
-                              }
-                              return;
-                            }
-
-                            ref
-                                    .read(
-                                      asistenciaPorEstudianteProvider(
-                                        estudianteParams,
-                                      ).notifier,
-                                    )
-                                    .state =
-                                nuevoEstado;
-                          },
-                        ),
-                      ),
-                    ),
+                  return _tarjetaEstudiante(
+                    est,
+                    estado,
+                    estudianteParams,
+                    ref,
+                    context,
+                    fechaTexto,
+                    params,
                   );
                 },
               );
             },
           ),
+        ),
+      ],
+    );
+  }
+
+  Widget _tarjetaEstudiante(
+    Estudiante est,
+    EstadoAsistencia estado,
+    AsistenciaParamsEstudiante estudianteParams,
+    WidgetRef ref,
+    BuildContext context,
+    String fechaTexto,
+    AsistenciasParams params,
+  ) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: _colorEstado(estado).withAlpha((0.4 * 255).round()),
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withAlpha((0.1 * 255).round()),
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
         ],
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 10,
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              capitalizarConTildes(est.apellido),
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              capitalizarConTildes(est.nombre),
+              style: const TextStyle(fontSize: 14),
+            ),
+          ],
+        ),
+        trailing: Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _colorEstado(estado),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            icon: Icon(_iconoEstado(estado), size: 18),
+            label: Text(
+              _textoEstado(estado),
+              style: const TextStyle(fontSize: 13),
+            ),
+            onPressed: () async {
+              final nuevoEstado = EstadoAsistencia
+                  .values[(estado.index + 1) % EstadoAsistencia.values.length];
+              final controller = ref.read(
+                asistenciasControllerProvider(params).notifier,
+              );
+
+              try {
+                await controller.registrarAsistencia(
+                  fecha: fechaTexto,
+                  estudianteId: est.id,
+                  estado: nuevoEstado.name,
+                  params: params,
+                );
+              } catch (e, st) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        '❌ Error: $e\n${st.toString().split('\n').take(3).join('\n')}',
+                      ),
+                      backgroundColor: Colors.redAccent,
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
+                }
+                return;
+              }
+
+              ref
+                      .read(
+                        asistenciaPorEstudianteProvider(
+                          estudianteParams,
+                        ).notifier,
+                      )
+                      .state =
+                  nuevoEstado;
+            },
+          ),
+        ),
       ),
     );
   }

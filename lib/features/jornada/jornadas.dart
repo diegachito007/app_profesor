@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 import 'asistencias.dart';
 import '../../../shared/utils/texto_normalizado.dart';
 
-class JornadaPage extends ConsumerStatefulWidget {
+class JornadasPage extends ConsumerStatefulWidget {
   final int cursoId;
   final String curso;
   final String materia;
@@ -14,7 +14,7 @@ class JornadaPage extends ConsumerStatefulWidget {
   final int materiaCursoId;
   final DateTime fechaReal;
 
-  const JornadaPage({
+  const JornadasPage({
     super.key,
     required this.cursoId,
     required this.curso,
@@ -26,12 +26,11 @@ class JornadaPage extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<JornadaPage> createState() => _JornadaPageState();
+  ConsumerState<JornadasPage> createState() => _JornadasPageState();
 }
 
-class _JornadaPageState extends ConsumerState<JornadaPage> {
+class _JornadasPageState extends ConsumerState<JornadasPage> {
   int _index = 0;
-  bool _vistaHorizontal = false;
   final List<String> _titulos = ['Asistencia', 'Notas', 'Faltas', 'Resumen'];
 
   @override
@@ -52,21 +51,7 @@ class _JornadaPageState extends ConsumerState<JornadaPage> {
           ),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: _index == 0
-            ? [
-                IconButton(
-                  icon: Icon(
-                    _vistaHorizontal ? Icons.view_agenda : Icons.view_carousel,
-                    color: Colors.white,
-                  ),
-                  tooltip: _vistaHorizontal
-                      ? 'Vista vertical'
-                      : 'Vista horizontal',
-                  onPressed: () =>
-                      setState(() => _vistaHorizontal = !_vistaHorizontal),
-                ),
-              ]
-            : null,
+        actions: null,
       ),
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -93,7 +78,6 @@ class _JornadaPageState extends ConsumerState<JornadaPage> {
                       hora: int.parse(widget.hora),
                       materia: widget.materia,
                       dia: widget.dia,
-                      vistaHorizontal: _vistaHorizontal,
                       fecha: widget.fechaReal,
                     ),
                     const Center(child: Text('Notas (en construcción)')),

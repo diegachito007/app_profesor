@@ -87,7 +87,7 @@ class AppRoutes {
       case jornada:
         final args = settings.arguments as Map<String, dynamic>;
         return MaterialPageRoute(
-          builder: (_) => JornadaPage(
+          builder: (_) => JornadasPage(
             cursoId: args['cursoId'] as int,
             curso: args['curso'] as String,
             materia: args['materia'] as String,
