@@ -1,59 +1,39 @@
 # Flutter
 .dart_tool/
 .packages
-build/
-ios/Flutter/Flutter.framework
-ios/Flutter/Flutter.podspec
 .flutter-plugins
 .flutter-plugins-dependencies
-.pub-cache/
 .flutter-*
+.pub-cache/
 *.lock
+*.log
+*.tmp
+
+# Build outputs
+build/
 
 # Android
 android/.gradle/
 android/app/build/
-*.iml
 *.keystore
-
-# IntelliJ/VS Code
-.idea/
-.vscode/
-*.swp
+*.iml
 
 # iOS
 ios/Pods/
 ios/Runner.xcworkspace/
 ios/build/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
 
-# MacOS
-macos/Pods/
-macos/Flutter/Flutter.podspec
-macos/Flutter/ephemeral/
-macos/build/
+# Desktop platforms (excluded)
+linux/
+macos/
+windows/
 
-# Web
-web/.dart_tool/
-web/build/
-
-# Windows
-windows/Flutter/ephemeral/
-windows/build/
-windows/runner/Debug/
-windows/runner/Release/
-windows/runner/*.vcxproj.user
-
-# Linux
-linux/Flutter/ephemeral/
-linux/build/
+# IDEs
+.idea/
+.vscode/
+*.swp
 
 # Misc
-*.log
-*.tmp
 .DS_Store
-
-build/
-.dart_tool/
-.packages
-.idea/
-*.iml
