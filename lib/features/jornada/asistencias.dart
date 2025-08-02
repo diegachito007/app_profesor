@@ -1,10 +1,13 @@
-import 'package:app_profesor/shared/utils/texto_normalizado.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../data/controllers/asistencias_controller.dart';
 import '../../data/controllers/estudiantes_controller.dart';
 import '../../data/models/estudiante_model.dart';
 import '../../data/providers/asistencias_provider.dart';
+import '../../shared/utils/texto_normalizado.dart';
+import '../../shared/utils/horas.dart';
+import '../../shared/utils/fechas.dart';
 
 class AsistenciasSection extends ConsumerWidget {
   final int cursoId;
@@ -26,7 +29,9 @@ class AsistenciasSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final fechaTexto = fecha.toIso8601String().substring(0, 10);
+    final fechaTexto = normalizarFecha(
+      fecha,
+    ).toIso8601String().substring(0, 10);
     final params = AsistenciasParams(
       cursoId: cursoId,
       materiaCursoId: materiaCursoId,
@@ -55,22 +60,10 @@ class AsistenciasSection extends ConsumerWidget {
       EstadoAsistencia.justificado: 0,
     };
 
-    for (final est in estudiantes) {
-      final estudianteParams = AsistenciaParamsEstudiante(
-        bloqueParams: params,
-        estudianteId: est.id,
-      );
-      final estado = ref.watch(
-        asistenciaPorEstudianteProvider(estudianteParams),
-      );
-      conteo[estado] = conteo[estado]! + 1;
-    }
-
     final GlobalKey tarjetaKey = GlobalKey();
 
     return Column(
       children: [
-        // Tarjeta invisible para medir alto real
         Offstage(
           child: Container(
             key: tarjetaKey,
@@ -111,23 +104,13 @@ class AsistenciasSection extends ConsumerWidget {
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _contadorChip(
-                'Presente',
-                conteo[EstadoAsistencia.presente]!,
-                Colors.green,
-              ),
-              _contadorChip(
-                'Ausente',
-                conteo[EstadoAsistencia.ausente]!,
-                Colors.redAccent,
-              ),
-              _contadorChip(
-                'Justificado',
-                conteo[EstadoAsistencia.justificado]!,
-                Colors.orange,
-              ),
-            ],
+            children: EstadoAsistencia.values.map((estado) {
+              return _contadorChip(
+                _textoEstado(estado),
+                conteo[estado]!,
+                _colorEstado(estado),
+              );
+            }).toList(),
           ),
         ),
 
@@ -147,6 +130,7 @@ class AsistenciasSection extends ConsumerWidget {
                   final estado = ref.watch(
                     asistenciaPorEstudianteProvider(estudianteParams),
                   );
+                  conteo[estado] = conteo[estado]! + 1;
 
                   return _tarjetaEstudiante(
                     est,
@@ -226,44 +210,47 @@ class AsistenciasSection extends ConsumerWidget {
               _textoEstado(estado),
               style: const TextStyle(fontSize: 13),
             ),
-            onPressed: () async {
-              final nuevoEstado = EstadoAsistencia
-                  .values[(estado.index + 1) % EstadoAsistencia.values.length];
-              final controller = ref.read(
-                asistenciasControllerProvider(params).notifier,
-              );
+            onPressed: esFechaHoy(normalizarFecha(fecha))
+                ? () async {
+                    final nuevoEstado =
+                        EstadoAsistencia.values[(estado.index + 1) %
+                            EstadoAsistencia.values.length];
+                    final controller = ref.read(
+                      asistenciasControllerProvider(params).notifier,
+                    );
 
-              try {
-                await controller.registrarAsistencia(
-                  fecha: fechaTexto,
-                  estudianteId: est.id,
-                  estado: nuevoEstado.name,
-                  params: params,
-                );
-              } catch (e, st) {
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        '❌ Error: $e\n${st.toString().split('\n').take(3).join('\n')}',
-                      ),
-                      backgroundColor: Colors.redAccent,
-                      duration: const Duration(seconds: 4),
-                    ),
-                  );
-                }
-                return;
-              }
+                    try {
+                      await controller.registrarAsistencia(
+                        fecha: fechaTexto,
+                        estudianteId: est.id,
+                        estado: nuevoEstado.name,
+                        params: params,
+                      );
+                    } catch (e, st) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '❌ Error: $e\n${st.toString().split('\n').take(3).join('\n')}',
+                            ),
+                            backgroundColor: Colors.redAccent,
+                            duration: const Duration(seconds: 4),
+                          ),
+                        );
+                      }
+                      return;
+                    }
 
-              ref
-                      .read(
-                        asistenciaPorEstudianteProvider(
-                          estudianteParams,
-                        ).notifier,
-                      )
-                      .state =
-                  nuevoEstado;
-            },
+                    ref
+                            .read(
+                              asistenciaPorEstudianteProvider(
+                                estudianteParams,
+                              ).notifier,
+                            )
+                            .state =
+                        nuevoEstado;
+                  }
+                : null, // ✅ botón desactivado si no es hoy
           ),
         ),
       ),
