@@ -5,9 +5,11 @@ class AsistenciaModel {
   final int materiaCursoId;
   final int hora;
   final String estado;
-  final String? fechaRegistro;
-  final String? fotoJustificacion;
-  final String? comentario;
+
+  final String? detalle; // observación contextual al registrar
+  final String? fechaJustificacion; // cuándo se justificó
+  final String? fotoJustificacion; // evidencia visual
+  final String? detalleJustificacion; // explicación formal
 
   AsistenciaModel({
     this.id,
@@ -16,9 +18,10 @@ class AsistenciaModel {
     required this.materiaCursoId,
     required this.hora,
     required this.estado,
-    this.fechaRegistro,
+    this.detalle,
+    this.fechaJustificacion,
     this.fotoJustificacion,
-    this.comentario,
+    this.detalleJustificacion,
   });
 
   Map<String, dynamic> toDatabaseMap() {
@@ -29,9 +32,10 @@ class AsistenciaModel {
       'materia_curso_id': materiaCursoId,
       'hora': hora,
       'estado': estado,
-      'fecha_registro': fechaRegistro,
+      'detalle': detalle,
+      'fecha_justificacion': fechaJustificacion,
       'foto_justificacion': fotoJustificacion,
-      'comentario': comentario,
+      'detalle_justificacion': detalleJustificacion,
     };
   }
 
@@ -43,9 +47,10 @@ class AsistenciaModel {
       materiaCursoId: map['materia_curso_id'] as int,
       hora: map['hora'] as int,
       estado: map['estado'] as String,
-      fechaRegistro: map['fecha_registro'] as String?,
+      detalle: map['detalle'] as String?,
+      fechaJustificacion: map['fecha_justificacion'] as String?,
       fotoJustificacion: map['foto_justificacion'] as String?,
-      comentario: map['comentario'] as String?,
+      detalleJustificacion: map['detalle_justificacion'] as String?,
     );
   }
 

@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
 
-// Páginas principales
+// 📦 Páginas principales
 import '../features/home/home.dart';
 import '../features/home/license/license.dart';
 import '../features/dashboard/dashboard_principal.dart';
 
-// Páginas de gestión
+// 📦 Páginas de gestión académica
 import '../features/pages/periodos/periodos_page.dart';
 import '../features/pages/cursos/cursos_page.dart';
 import '../features/pages/cursos/dashboard/dashboard_cursos.dart';
 import '../features/pages/materias/materias_page.dart';
 import '../features/pages/materias_curso/materias_curso_page.dart';
 import '../features/pages/estudiantes/estudiantes_page.dart';
+
+// 📦 Páginas de horarios y jornada
 import '../features/pages/horarios/horarios_page.dart';
 import '../features/pages/horarios/asignar_bloque_horario_page.dart';
-import '../features/jornada/jornada.dart'; // 👈 nuevo import
+import '../features/jornada/jornadas.dart'; // ✅ actualizado
 
+// 📦 Modelos
 import '../data/models/curso_model.dart';
 
 class AppRoutes {
@@ -33,7 +36,7 @@ class AppRoutes {
 
   static const String horario = '/horario';
   static const String asignarHorario = '/asignar-horario';
-  static const String jornada = '/jornada'; // 👈 nueva ruta
+  static const String jornada = '/jornada';
 
   // 🧭 Generador de rutas
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -90,7 +93,8 @@ class AppRoutes {
             materia: args['materia'] as String,
             dia: args['dia'] as String,
             hora: args['hora'] as String,
-            bloqueId: args['bloqueId'] as String,
+            materiaCursoId: args['materiaCursoId'] as int,
+            fechaReal: args['fechaReal'] as DateTime, // ✅ nuevo parámetro
           ),
         );
     }

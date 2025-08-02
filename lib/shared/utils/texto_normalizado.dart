@@ -111,3 +111,10 @@ String capitalizarNombreCompleto(String nombre, String apellido) {
   final texto = '${apellido.trim()} ${nombre.trim()}';
   return capitalizarConTildes(texto);
 }
+
+String limpiarNombre(String texto) {
+  final limpio = texto
+      .replaceAll(RegExp(r'\s+'), ' ') // Elimina espacios duplicados
+      .trim(); // Elimina espacios al inicio y final
+  return capitalizarConTildes(limpio);
+}

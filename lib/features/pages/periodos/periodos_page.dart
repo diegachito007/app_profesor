@@ -67,7 +67,6 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
             title: const Text('Eliminar período'),
             content: Text(
               '¿Estás seguro de eliminar el período ${periodo.nombre}?\n\n'
-              'También se eliminarán todos los datos asociados, como cursos, materias y estudiantes.\n\n'
               'Esta acción es permanente y no se puede deshacer.',
               style: const TextStyle(fontSize: 14),
             ),

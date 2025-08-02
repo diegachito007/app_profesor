@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
+
 import 'asistencias.dart';
 import '../../../shared/utils/texto_normalizado.dart';
 
-class JornadaPage extends StatefulWidget {
+class JornadaPage extends ConsumerStatefulWidget {
   final int cursoId;
   final String curso;
   final String materia;
   final String dia;
   final String hora;
-  final String bloqueId;
+  final int materiaCursoId;
+  final DateTime fechaReal;
 
   const JornadaPage({
     super.key,
@@ -17,43 +21,22 @@ class JornadaPage extends StatefulWidget {
     required this.materia,
     required this.dia,
     required this.hora,
-    required this.bloqueId,
+    required this.materiaCursoId,
+    required this.fechaReal,
   });
 
   @override
-  State<JornadaPage> createState() => _JornadaPageState();
+  ConsumerState<JornadaPage> createState() => _JornadaPageState();
 }
 
-class _JornadaPageState extends State<JornadaPage> {
+class _JornadaPageState extends ConsumerState<JornadaPage> {
   int _index = 0;
   bool _vistaHorizontal = false;
-
-  final List<String> _titulos = ['Asistencias', 'Notas', 'Faltas', 'Resumen'];
+  final List<String> _titulos = ['Asistencia', 'Notas', 'Faltas', 'Resumen'];
 
   @override
   Widget build(BuildContext context) {
-    final partes = widget.bloqueId.split('-');
-    final materiaCursoId = partes.length >= 2
-        ? int.tryParse(partes[1]) ?? 0
-        : 0;
-
-    final mostrarBotonGuardar = _index == 0;
-    final botonGuardar = mostrarBotonGuardar
-        ? ElevatedButton.icon(
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Asistencia guardada')),
-              );
-            },
-            icon: const Icon(Icons.save, size: 16),
-            label: const Text('Guardar'),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              textStyle: const TextStyle(fontSize: 13),
-              backgroundColor: Colors.blueAccent,
-            ),
-          )
-        : null;
+    final fechaTexto = DateFormat('yyyy-MM-dd').format(widget.fechaReal);
 
     return Scaffold(
       appBar: AppBar(
@@ -97,7 +80,7 @@ class _JornadaPageState extends State<JornadaPage> {
                 materia: widget.materia,
                 dia: widget.dia,
                 hora: widget.hora,
-                botonAccion: botonGuardar, // ✅ aquí va el botón
+                fecha: fechaTexto,
               ),
               const SizedBox(height: 24),
               Expanded(
@@ -106,11 +89,12 @@ class _JornadaPageState extends State<JornadaPage> {
                   children: [
                     AsistenciasSection(
                       cursoId: widget.cursoId,
-                      materiaCursoId: materiaCursoId,
+                      materiaCursoId: widget.materiaCursoId,
                       hora: int.parse(widget.hora),
                       materia: widget.materia,
                       dia: widget.dia,
                       vistaHorizontal: _vistaHorizontal,
+                      fecha: widget.fechaReal,
                     ),
                     const Center(child: Text('Notas (en construcción)')),
                     const Center(child: Text('Faltas (en construcción)')),
@@ -153,7 +137,7 @@ class EncabezadoJornada extends StatelessWidget {
   final String materia;
   final String dia;
   final String hora;
-  final Widget? botonAccion;
+  final String fecha;
 
   const EncabezadoJornada({
     super.key,
@@ -161,7 +145,7 @@ class EncabezadoJornada extends StatelessWidget {
     required this.materia,
     required this.dia,
     required this.hora,
-    this.botonAccion,
+    required this.fecha,
   });
 
   @override
@@ -183,23 +167,17 @@ class EncabezadoJornada extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.schedule_outlined,
-                  color: Colors.black54,
-                  size: 20,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Día: $dia · Hora: $hora',
-                  style: const TextStyle(fontSize: 13.5, color: Colors.black54),
-                ),
-              ],
+            const Icon(
+              Icons.schedule_outlined,
+              color: Colors.black54,
+              size: 20,
             ),
-            if (botonAccion != null) botonAccion!,
+            const SizedBox(width: 8),
+            Text(
+              'Día: $dia · Hora: $hora · Fecha: $fecha',
+              style: const TextStyle(fontSize: 13.5, color: Colors.black54),
+            ),
           ],
         ),
       ],

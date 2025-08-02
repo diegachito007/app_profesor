@@ -120,16 +120,30 @@ Future<void> _crearTablas(Database db) async {
   ''');
 
   await db.execute('''
+  CREATE TABLE jornadas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    materia_curso_id INTEGER NOT NULL,
+    fecha TEXT NOT NULL,
+    hora INTEGER NOT NULL,
+    estado TEXT NOT NULL CHECK(estado IN ('activa', 'suspendida')),
+    detalle TEXT,
+    creado_en TEXT NOT NULL,
+    FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
+  );
+''');
+
+  await db.execute('''
   CREATE TABLE asistencias (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     fecha TEXT NOT NULL,
     estudiante_id INTEGER NOT NULL,
     materia_curso_id INTEGER NOT NULL,
     hora INTEGER NOT NULL,
-    estado TEXT NOT NULL CHECK(estado IN ('Presente', 'Ausente', 'Justificado')),
-    fecha_registro TEXT,
+    estado TEXT NOT NULL CHECK(estado IN ('presente', 'ausente', 'justificado')),
+    detalle TEXT,
+    fecha_justificacion TEXT,
     foto_justificacion TEXT,
-    comentario TEXT,
+    detalle_justificacion TEXT,
     FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE,
     FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
   );

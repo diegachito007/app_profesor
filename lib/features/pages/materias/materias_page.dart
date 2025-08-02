@@ -294,7 +294,6 @@ class _MateriasPageState extends ConsumerState<MateriasPage> {
                     title: const Text('Eliminar materia'),
                     content: Text(
                       '¿Estás seguro de eliminar la materia ${materia.nombre}?\n\n'
-                      'También se eliminarán todos los datos asociados, como estudiantes, calificaciones y asistencia.\n\n'
                       'Esta acción es permanente y no se puede deshacer.',
                       style: const TextStyle(fontSize: 14),
                     ),

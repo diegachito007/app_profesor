@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project name="Sqlite" database="Sqlite" id="aae738ad-6cd4-4e32-b13d-238c84538bb9" >
+	<schema name="Default" >
+		<table name="alertas_enviadas" spec="" >
+			<column name="id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" >
+				<identity><![CDATA[AUTOINCREMENT]]></identity>
+			</column>
+			<column name="estudiante_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="fecha" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="motivo" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<index name="pk_alertas_enviadas" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<fk name="FK_alertas_enviadas estudiantes" to_schema="Default" to_table="estudiantes" delete_action="cascade" options="" >
+				<fk_column name="estudiante_id" pk="id" />
+			</fk>
+		</table>
+		<table name="android_metadata" spec="" >
+			<column name="locale" type="TEXT" length="2000000000" decimal="0" />
+		</table>
+		<table name="asistencias" spec="" >
+			<column name="id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" >
+				<identity><![CDATA[AUTOINCREMENT]]></identity>
+			</column>
+			<column name="fecha" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="estudiante_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="materia_curso_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="hora" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="estado" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="fecha_registro" type="TEXT" length="2000000000" decimal="0" />
+			<column name="foto_justificacion" type="TEXT" length="2000000000" decimal="0" />
+			<column name="comentario" type="TEXT" length="2000000000" decimal="0" />
+			<index name="pk_asistencias" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="idx_asistencias_fecha" unique="NORMAL" >
+				<column name="fecha" />
+				<column name="estudiante_id" />
+			</index>
+			<constraint name="Cns_asistencias_estado" >
+				<string><![CDATA[estado IN ('Presente', 'Ausente', 'Justificado')]]></string>
+			</constraint>
+			<fk name="FK_asistencias estudiantes" to_schema="Default" to_table="estudiantes" delete_action="cascade" options="" >
+				<fk_column name="estudiante_id" pk="id" />
+			</fk>
+			<fk name="FK_asistencias materias_curso" to_schema="Default" to_table="materias_curso" delete_action="cascade" options="" >
+				<fk_column name="materia_curso_id" pk="id" />
+			</fk>
+		</table>
+		<table name="cursos" spec="" >
+			<column name="id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" >
+				<identity><![CDATA[AUTOINCREMENT]]></identity>
+			</column>
+			<column name="nombre" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="paralelo" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="periodo_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="activo" type="INTEGER" length="2000000000" decimal="0" >
+				<defo><![CDATA[1]]></defo>
+			</column>
+			<index name="pk_cursos" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<fk name="FK_cursos periodos" to_schema="Default" to_table="periodos" delete_action="cascade" options="" >
+				<fk_column name="periodo_id" pk="id" />
+			</fk>
+		</table>
+		<table name="esquemas_evaluacion" spec="" >
+			<column name="id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" >
+				<identity><![CDATA[AUTOINCREMENT]]></identity>
+			</column>
+			<column name="periodo_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="nombre_apartado" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="porcentaje" type="REAL" mandatory="y" />
+			<column name="es_defecto" type="INTEGER" length="2000000000" decimal="0" />
+			<index name="pk_esquemas_evaluacion" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<constraint name="Cns_esquemas_evaluacion_porcentaje" >
+				<string><![CDATA[porcentaje BETWEEN 0 AND 100]]></string>
+			</constraint>
+			<constraint name="Cns_esquemas_evaluacion_es_defecto" >
+				<string><![CDATA[es_defecto IN (0, 1)]]></string>
+			</constraint>
+			<fk name="FK_esquemas_evaluacion periodos" to_schema="Default" to_table="periodos" delete_action="cascade" options="" >
+				<fk_column name="periodo_id" pk="id" />
+			</fk>
+		</table>
+		<table name="estudiantes" spec="" >
+			<column name="id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" >
+				<identity><![CDATA[AUTOINCREMENT]]></identity>
+			</column>
+			<column name="cedula" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="nombre" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="apellido" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="curso_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="telefono" type="TEXT" length="2000000000" decimal="0" />
+			<index name="pk_estudiantes" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="idx_estudiantes_curso" unique="NORMAL" >
+				<column name="curso_id" />
+			</index>
+			<index name="sqlite_autoindex_estudiantes_1" unique="UNIQUE_INDEX" >
+				<column name="cedula" />
+			</index>
+			<constraint name="Cns_estudiantes_cedula" >
+				<string><![CDATA[length(cedula) <= 10]]></string>
+			</constraint>
+			<constraint name="Cns_estudiantes_telefono" >
+				<string><![CDATA[length(telefono) >= 10]]></string>
+			</constraint>
+			<fk name="FK_estudiantes cursos" to_schema="Default" to_table="cursos" delete_action="cascade" options="" >
+				<fk_column name="curso_id" pk="id" />
+			</fk>
+		</table>
+		<table name="evaluaciones" spec="" >
+			<column name="id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" >
+				<identity><![CDATA[AUTOINCREMENT]]></identity>
+			</column>
+			<column name="tipo" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="descripcion" type="TEXT" length="2000000000" decimal="0" />
+			<column name="fecha" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="materia_curso_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="ponderacion" type="REAL" mandatory="y" />
+			<column name="trimestre" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<index name="pk_evaluaciones" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="idx_evaluaciones_materia" unique="NORMAL" >
+				<column name="materia_curso_id" />
+			</index>
+			<constraint name="Cns_evaluaciones_ponderacion" >
+				<string><![CDATA[ponderacion BETWEEN 0 AND 100]]></string>
+			</constraint>
+			<constraint name="Cns_evaluaciones_trimestre" >
+				<string><![CDATA[trimestre IN ('1', '2', '3')]]></string>
+			</constraint>
+			<fk name="FK_evaluaciones materias_curso" to_schema="Default" to_table="materias_curso" delete_action="cascade" options="" >
+				<fk_column name="materia_curso_id" pk="id" />
+			</fk>
+		</table>
+		<table name="horario_clase" spec="" >
+			<column name="id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" >
+				<identity><![CDATA[AUTOINCREMENT]]></identity>
+			</column>
+			<column name="dia" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="hora" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="materia_curso_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<index name="pk_horario_clase" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<fk name="FK_horario_clase materias_curso" to_schema="Default" to_table="materias_curso" delete_action="cascade" options="" >
+				<fk_column name="materia_curso_id" pk="id" />
+			</fk>
+		</table>
+		<table name="materias" spec="" >
+			<column name="id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" >
+				<identity><![CDATA[AUTOINCREMENT]]></identity>
+			</column>
+			<column name="nombre" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="tipo_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<index name="pk_materias" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="sqlite_autoindex_materias_1" unique="UNIQUE_INDEX" >
+				<column name="nombre" />
+			</index>
+			<fk name="FK_materias tipos_materia" to_schema="Default" to_table="tipos_materia" delete_action="cascade" options="" >
+				<fk_column name="tipo_id" pk="id" />
+			</fk>
+		</table>
+		<table name="materias_curso" spec="" >
+			<column name="id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" >
+				<identity><![CDATA[AUTOINCREMENT]]></identity>
+			</column>
+			<column name="curso_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="materia_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="activo" type="INTEGER" length="2000000000" decimal="0" >
+				<defo><![CDATA[1]]></defo>
+			</column>
+			<column name="fecha_asignacion" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="fecha_desactivacion" type="TEXT" length="2000000000" decimal="0" />
+			<index name="pk_materias_curso" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<fk name="FK_materias_curso cursos" to_schema="Default" to_table="cursos" delete_action="cascade" options="" >
+				<fk_column name="curso_id" pk="id" />
+			</fk>
+			<fk name="FK_materias_curso materias" to_schema="Default" to_table="materias" delete_action="cascade" options="" >
+				<fk_column name="materia_id" pk="id" />
+			</fk>
+		</table>
+		<table name="notas" spec="" >
+			<column name="id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" >
+				<identity><![CDATA[AUTOINCREMENT]]></identity>
+			</column>
+			<column name="estudiante_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="evaluacion_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="nota" type="REAL" mandatory="y" />
+			<column name="estado" type="TEXT" length="2000000000" decimal="0" />
+			<column name="fecha_recuperacion" type="TEXT" length="2000000000" decimal="0" />
+			<index name="pk_notas" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="idx_notas_estudiante" unique="NORMAL" >
+				<column name="estudiante_id" />
+			</index>
+			<constraint name="Cns_notas_nota" >
+				<string><![CDATA[nota BETWEEN 0 AND 10]]></string>
+			</constraint>
+			<constraint name="Cns_notas_estado" >
+				<string><![CDATA[estado IN ('Regular', 'Recuperado', 'No asistió')]]></string>
+			</constraint>
+			<fk name="FK_notas estudiantes" to_schema="Default" to_table="estudiantes" delete_action="cascade" options="" >
+				<fk_column name="estudiante_id" pk="id" />
+			</fk>
+			<fk name="FK_notas evaluaciones" to_schema="Default" to_table="evaluaciones" delete_action="cascade" options="" >
+				<fk_column name="evaluacion_id" pk="id" />
+			</fk>
+		</table>
+		<table name="periodos" spec="" >
+			<column name="id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" >
+				<identity><![CDATA[AUTOINCREMENT]]></identity>
+			</column>
+			<column name="nombre" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="fecha_inicio" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="fecha_fin" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="activo" type="INTEGER" length="2000000000" decimal="0" >
+				<defo><![CDATA[0]]></defo>
+			</column>
+			<index name="pk_periodos" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+		</table>
+		<table name="temas_personalizados" spec="" >
+			<column name="id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" >
+				<identity><![CDATA[AUTOINCREMENT]]></identity>
+			</column>
+			<column name="materia_curso_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="curso_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="titulo" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<index name="pk_temas_personalizados" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<fk name="FK_temas_personalizados materias_curso" to_schema="Default" to_table="materias_curso" delete_action="cascade" options="" >
+				<fk_column name="materia_curso_id" pk="id" />
+			</fk>
+			<fk name="FK_temas_personalizados cursos" to_schema="Default" to_table="cursos" delete_action="cascade" options="" >
+				<fk_column name="curso_id" pk="id" />
+			</fk>
+		</table>
+		<table name="tipos_materia" spec="" >
+			<column name="id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" >
+				<identity><![CDATA[AUTOINCREMENT]]></identity>
+			</column>
+			<column name="nombre" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="sigla" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<index name="pk_tipos_materia" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="sqlite_autoindex_tipos_materia_2" unique="UNIQUE_INDEX" >
+				<column name="sigla" />
+			</index>
+			<index name="sqlite_autoindex_tipos_materia_1" unique="UNIQUE_INDEX" >
+				<column name="nombre" />
+			</index>
+		</table>
+		<table name="visitas_padres" spec="" >
+			<column name="id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" >
+				<identity><![CDATA[AUTOINCREMENT]]></identity>
+			</column>
+			<column name="estudiante_id" type="INTEGER" length="2000000000" decimal="0" mandatory="y" />
+			<column name="fecha" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="nombre_representante" type="TEXT" length="2000000000" decimal="0" mandatory="y" />
+			<column name="motivo" type="TEXT" length="2000000000" decimal="0" />
+			<column name="firma" type="TEXT" length="2000000000" decimal="0" />
+			<index name="pk_visitas_padres" unique="PRIMARY_KEY" >
+				<column name="id" />
+			</index>
+			<index name="idx_visitas_padres_fecha" unique="NORMAL" >
+				<column name="fecha" />
+				<column name="estudiante_id" />
+			</index>
+			<fk name="FK_visitas_padres estudiantes" to_schema="Default" to_table="estudiantes" delete_action="cascade" options="" >
+				<fk_column name="estudiante_id" pk="id" />
+			</fk>
+		</table>
+	</schema>
+	<layout name="Main Diagram" id="ab5e5ae6-6ae6-490b-8888-78a7f8e91be8" show_relation="columns" >
+		<entity schema="Default" name="alertas_enviadas" color="BED3F4" x="1425" y="133" />
+		<entity schema="Default" name="android_metadata" color="3986C1" x="874" y="95" />
+		<entity schema="Default" name="asistencias" color="C7F4BE" x="57" y="874" />
+		<entity schema="Default" name="cursos" color="C7F4BE" x="855" y="399" />
+		<entity schema="Default" name="esquemas_evaluacion" color="C7F4BE" x="589" y="399" />
+		<entity schema="Default" name="estudiantes" color="BED3F4" x="1672" y="684" />
+		<entity schema="Default" name="evaluaciones" color="BED3F4" x="1406" y="380" />
+		<entity schema="Default" name="horario_clase" color="C7F4BE" x="323" y="627" />
+		<entity schema="Default" name="materias" color="C7F4BE" x="589" y="874" />
+		<entity schema="Default" name="materias_curso" color="C7F4BE" x="855" y="665" />
+		<entity schema="Default" name="notas" color="BED3F4" x="1159" y="95" />
+		<entity schema="Default" name="periodos" color="C7F4BE" x="152" y="361" />
+		<entity schema="Default" name="temas_personalizados" color="C7F4BE" x="323" y="874" />
+		<entity schema="Default" name="tipos_materia" color="C7F4BE" x="380" y="399" />
+		<entity schema="Default" name="visitas_padres" color="BED3F4" x="1672" y="133" />
+		<group name="alertas_enviadas" color="ECF0F7" >
+			<entity schema="Default" name="alertas_enviadas" />
+			<entity schema="Default" name="estudiantes" />
+			<entity schema="Default" name="visitas_padres" />
+			<entity schema="Default" name="evaluaciones" />
+			<entity schema="Default" name="notas" />
+		</group>
+		<group name="periodos" color="EEF7EC" >
+			<entity schema="Default" name="periodos" />
+			<entity schema="Default" name="tipos_materia" />
+			<entity schema="Default" name="esquemas_evaluacion" />
+			<entity schema="Default" name="cursos" />
+			<entity schema="Default" name="horario_clase" />
+			<entity schema="Default" name="materias" />
+			<entity schema="Default" name="temas_personalizados" />
+			<entity schema="Default" name="materias_curso" />
+			<entity schema="Default" name="asistencias" />
+		</group>
+		<script name="asistencias" id="f8fb70a7-215a-48d6-9031-e31f839f2b27" language="SQL" >
+			<string><![CDATA[SELECT
+	id, fecha, estudiante_id, materia_curso_id, hora, estado, fecha_registro, foto_justificacion, comentario
+FROM
+	asistencias s;]]></string>
+		</script>
+	</layout>
+	<layout name="~Diagram with Sample Tools" id="a7191275-aa6d-4709-ac41-b41399507574" show_column_type="y" show_relation="columns" >
+		<entity schema="Default" name="alertas_enviadas" color="BED3F4" x="1596" y="95" />
+		<entity schema="Default" name="android_metadata" color="3986C1" x="1007" y="57" />
+		<entity schema="Default" name="asistencias" color="C7F4BE" x="57" y="836" />
+		<entity schema="Default" name="cursos" color="C7F4BE" x="950" y="361" />
+		<entity schema="Default" name="esquemas_evaluacion" color="C7F4BE" x="665" y="361" />
+		<entity schema="Default" name="estudiantes" color="BED3F4" x="1881" y="646" />
+		<entity schema="Default" name="evaluaciones" color="BED3F4" x="1577" y="342" />
+		<entity schema="Default" name="horario_clase" color="C7F4BE" x="361" y="589" />
+		<entity schema="Default" name="materias" color="C7F4BE" x="665" y="836" />
+		<entity schema="Default" name="materias_curso" color="C7F4BE" x="950" y="627" />
+		<entity schema="Default" name="notas" color="BED3F4" x="1292" y="57" />
+		<entity schema="Default" name="periodos" color="C7F4BE" x="190" y="323" />
+		<entity schema="Default" name="temas_personalizados" color="C7F4BE" x="361" y="836" />
+		<entity schema="Default" name="tipos_materia" color="C7F4BE" x="437" y="361" />
+		<entity schema="Default" name="visitas_padres" color="BED3F4" x="1881" y="95" />
+		<script name="SQL Editor" id="d37003c4-d3c1-45b6-82c2-1aed7b141a87" language="SQL" >
+			<string><![CDATA[SELECT
+	id, curso_id, materia_id, activo, fecha_asignacion, fecha_desactivacion
+FROM
+	materias_curso o;]]></string>
+		</script>
+		<browser id="88649374-67f0-4df8-b87f-691ec172cf9b" name="Relational Data Editor" confirm_updates="y" >
+			<browse_table schema="Default" entity="materias_curso" fk_out="n" x="20" y="20" width="270" height="-60" >
+				<browse_table schema="Default" entity="asistencias" fk="FK_asistencias materias_curso" fk_out="y" x="310" y="20" width="500" height="350" >
+					<browse_table schema="Default" entity="estudiantes" fk="FK_asistencias estudiantes" fk_out="n" x="830" y="20" width="500" height="350" record_view="y" />
+				</browse_table>
+			</browse_table>
+		</browser>
+		<query id="f29936d4-8db7-483d-9b98-133b8382caff" name="Query Builder" >
+			<query_table schema="Default" name="materias_curso" alias="mc" x="57" y="57" >
+				<column name="id" />
+				<column name="curso_id" />
+				<column name="materia_id" />
+				<column name="activo" />
+				<column name="fecha_asignacion" />
+				<column name="fecha_desactivacion" />
+				<query_table schema="Default" name="asistencias" alias="a" x="304" y="57" fk="FK_asistencias materias_curso" type="Inner Join" >
+					<column name="id" />
+					<column name="fecha" />
+					<column name="estudiante_id" />
+					<column name="materia_curso_id" />
+					<column name="hora" />
+					<column name="estado" />
+					<column name="fecha_registro" />
+					<column name="foto_justificacion" />
+					<column name="comentario" />
+					<query_table schema="Default" name="estudiantes" alias="e" x="551" y="57" fk="FK_asistencias estudiantes" type="Inner Join" >
+						<column name="id" />
+						<column name="cedula" />
+						<column name="nombre" />
+						<column name="apellido" />
+						<column name="curso_id" />
+						<column name="telefono" />
+					</query_table>
+				</query_table>
+			</query_table>
+		</query>
+	</layout>
+</project>

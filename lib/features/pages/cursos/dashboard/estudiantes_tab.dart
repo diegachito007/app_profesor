@@ -283,67 +283,42 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
   }
 
   Future<void> _eliminarEstudiante(BuildContext context, Estudiante est) async {
-    final confirmar =
-        await showDialog<bool>(
-          context: context,
-          builder: (_) => AlertDialog(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 24,
-              vertical: 20,
-            ),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.warning_amber_rounded,
-                  color: Colors.redAccent,
-                  size: 48,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '¿Eliminar estudiante?',
-                  style: Theme.of(context).textTheme.titleMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Estás a punto de eliminar a ${est.nombreCompleto}.\n\n '
-                  'Esta acción es permanente y eliminará todos los datos relacionados con este estudiante.',
-                  style: const TextStyle(fontSize: 14),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancelar'),
-              ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.redAccent,
-                ),
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Eliminar'),
-              ),
-            ],
+    final confirmar = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Eliminar estudiante'),
+        content: Text(
+          '¿Estás seguro de eliminar al estudiante ${est.nombreCompleto}?\n\n'
+          'Esta acción es permanente y eliminará todos los datos relacionados.',
+          style: const TextStyle(fontSize: 14),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
           ),
-        ) ??
-        false;
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Eliminar'),
+          ),
+        ],
+      ),
+    );
 
-    if (confirmar) {
-      final controller = ref.read(
-        estudiantesControllerProvider(widget.cursoId).notifier,
-      );
-      await controller.eliminarEstudiante(est.id, widget.cursoId);
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Estudiante eliminado')));
-    }
+    if (confirmar != true || !context.mounted) return;
+
+    final controller = ref.read(
+      estudiantesControllerProvider(widget.cursoId).notifier,
+    );
+
+    await controller.eliminarEstudiante(est.id, widget.cursoId);
+
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Estudiante eliminado')));
   }
 
   Future<void> _llamar(String numero) async {
@@ -553,8 +528,8 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
       if (row.length < 4) continue;
 
       final cedula = row[0]?.value?.toString().trim() ?? '';
-      final nombres = normalizar(row[1]?.value?.toString().trim() ?? '');
-      final apellidos = normalizar(row[2]?.value?.toString().trim() ?? '');
+      final nombres = limpiarNombre(row[1]?.value?.toString() ?? '');
+      final apellidos = limpiarNombre(row[2]?.value?.toString() ?? '');
       var telefono = row[3]?.value?.toString().trim() ?? '';
       telefono = telefono.replaceAll(RegExp(r'\D'), '');
       if (telefono.length == 9) telefono = '0$telefono';
@@ -735,6 +710,8 @@ class _FormularioEstudianteState extends ConsumerState<_FormularioEstudiante> {
       estudiantesControllerProvider(widget.cursoId).notifier,
     );
 
+    final esEdicion = widget.estudiante != null;
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: SingleChildScrollView(
@@ -742,22 +719,20 @@ class _FormularioEstudianteState extends ConsumerState<_FormularioEstudiante> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              widget.estudiante != null
-                  ? 'Editar estudiante'
-                  : 'Nuevo estudiante',
+              esEdicion ? 'Editar estudiante' : 'Nuevo estudiante',
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 28),
             Form(
               key: _formKey,
               child: Column(
                 children: [
-                  TextFormField(
+                  _campoTexto(
+                    label: 'Cédula',
                     controller: _cedulaCtrl,
-                    decoration: const InputDecoration(labelText: 'Cédula'),
-                    keyboardType: TextInputType.number,
+                    tipo: TextInputType.number,
+                    enabled: !esEdicion,
                     maxLength: 10,
-                    enabled: widget.estudiante == null,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
                       LengthLimitingTextInputFormatter(10),
@@ -766,26 +741,26 @@ class _FormularioEstudianteState extends ConsumerState<_FormularioEstudiante> {
                         ? 'Debe tener 10 dígitos'
                         : null,
                   ),
-                  TextFormField(
+                  _campoTexto(
+                    label: 'Nombres',
                     controller: _nombreCtrl,
-                    decoration: const InputDecoration(labelText: 'Nombres'),
                     inputFormatters: [UpperCaseSinTildesFormatter()],
                     validator: (value) => value == null || value.isEmpty
                         ? 'Campo obligatorio'
                         : null,
                   ),
-                  TextFormField(
+                  _campoTexto(
+                    label: 'Apellidos',
                     controller: _apellidoCtrl,
-                    decoration: const InputDecoration(labelText: 'Apellidos'),
                     inputFormatters: [UpperCaseSinTildesFormatter()],
                     validator: (value) => value == null || value.isEmpty
                         ? 'Campo obligatorio'
                         : null,
                   ),
-                  TextFormField(
+                  _campoTexto(
+                    label: 'Teléfono',
                     controller: _telefonoCtrl,
-                    decoration: const InputDecoration(labelText: 'Teléfono'),
-                    keyboardType: TextInputType.number,
+                    tipo: TextInputType.number,
                     maxLength: 10,
                     inputFormatters: [
                       FilteringTextInputFormatter.digitsOnly,
@@ -836,28 +811,23 @@ class _FormularioEstudianteState extends ConsumerState<_FormularioEstudiante> {
               children: [
                 TextButton(
                   child: const Text('Cancelar'),
-                  onPressed: () {
-                    FocusScope.of(context).unfocus();
-                    Navigator.pop(context);
-                  },
+                  onPressed: () => Navigator.pop(context),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  child: Text(
-                    widget.estudiante != null ? 'Actualizar' : 'Guardar',
-                  ),
+                  child: Text(esEdicion ? 'Actualizar' : 'Guardar'),
                   onPressed: () async {
                     if (_formKey.currentState?.validate() ?? false) {
                       final estudiante = Estudiante(
                         id: widget.estudiante?.id ?? 0,
                         cedula: _cedulaCtrl.text.trim(),
-                        nombre: _nombreCtrl.text.trim(),
-                        apellido: _apellidoCtrl.text.trim(),
+                        nombre: limpiarNombre(_nombreCtrl.text),
+                        apellido: limpiarNombre(_apellidoCtrl.text),
                         telefono: _telefonoCtrl.text.trim(),
                         cursoId: widget.cursoId,
                       );
 
-                      if (widget.estudiante != null) {
+                      if (esEdicion) {
                         await controller.actualizarEstudiante(estudiante);
                         if (context.mounted) Navigator.pop(context);
                       } else {
@@ -865,8 +835,6 @@ class _FormularioEstudianteState extends ConsumerState<_FormularioEstudiante> {
                           estudiante.cedula,
                         );
                         if (existe) {
-                          if (!context.mounted) return;
-                          FocusScope.of(context).unfocus();
                           setState(() {
                             _errorLogico =
                                 'Ya existe un estudiante con esa cédula';
@@ -893,6 +861,33 @@ class _FormularioEstudianteState extends ConsumerState<_FormularioEstudiante> {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _campoTexto({
+    required String label,
+    required TextEditingController controller,
+    TextInputType tipo = TextInputType.text,
+    bool enabled = true,
+    int? maxLength,
+    List<TextInputFormatter>? inputFormatters,
+    String? Function(String?)? validator,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: TextFormField(
+        controller: controller,
+        enabled: enabled,
+        keyboardType: tipo,
+        maxLength: maxLength,
+        inputFormatters: inputFormatters,
+        validator: validator,
+        decoration: InputDecoration(
+          labelText: label,
+          counterText: '',
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
         ),
       ),
     );
