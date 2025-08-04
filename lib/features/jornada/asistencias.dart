@@ -54,11 +54,25 @@ class AsistenciasSection extends ConsumerWidget {
     }
 
     final estudiantes = estudiantesAsync.value!;
+
+    final asistenciasMap = {
+      for (final a in asistenciasAsync.value!) a.estudianteId: a.estado,
+    };
+
     final conteo = {
       EstadoAsistencia.presente: 0,
       EstadoAsistencia.ausente: 0,
       EstadoAsistencia.justificado: 0,
     };
+
+    for (final est in estudiantes) {
+      final estadoNombre = asistenciasMap[est.id];
+      final estado = EstadoAsistencia.values.firstWhere(
+        (e) => e.name == estadoNombre,
+        orElse: () => EstadoAsistencia.ausente,
+      );
+      conteo[estado] = conteo[estado]! + 1;
+    }
 
     final GlobalKey tarjetaKey = GlobalKey();
 

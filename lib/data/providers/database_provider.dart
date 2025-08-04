@@ -123,29 +123,29 @@ Future<void> _crearTablas(Database db) async {
   ''');
 
   await db.execute('''
+    CREATE TABLE notas (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      fecha TEXT NOT NULL,
+      estudiante_id INTEGER NOT NULL,
+      materia_curso_id INTEGER NOT NULL,
+      hora INTEGER NOT NULL,
+      tipo_nota_id INTEGER NOT NULL,
+      tema TEXT NOT NULL,
+      nota_final REAL NOT NULL CHECK(nota BETWEEN 0 AND 10),
+      estado TEXT CHECK(estado IN ('Regular', 'Recuperado', 'No asistió')),
+      FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE,
+      FOREIGN KEY (tipo_nota_id) REFERENCES tipo_notas(id) ON DELETE CASCADE,
+      FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
+    );
+  ''');
+
+  await db.execute('''
     CREATE TABLE tipo_notas (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nombre TEXT NOT NULL UNIQUE,
       prefijo TEXT NOT NULL,
       activo INTEGER NOT NULL DEFAULT 1 CHECK(activo IN (0, 1)),
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-    );
-  ''');
-
-  await db.execute('''
-    CREATE TABLE notas (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      estudiante_id INTEGER NOT NULL,
-      tipo_nota_id INTEGER NOT NULL,
-      materia_curso_id INTEGER NOT NULL,
-      tema TEXT NOT NULL,
-      nota REAL NOT NULL CHECK(nota BETWEEN 0 AND 10),
-      estado TEXT CHECK(estado IN ('Regular', 'Recuperado', 'No asistió')),
-      fecha TEXT NOT NULL,
-      fecha_recuperacion TEXT,
-      FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE,
-      FOREIGN KEY (tipo_nota_id) REFERENCES tipo_notas(id) ON DELETE CASCADE,
-      FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
     );
   ''');
 
