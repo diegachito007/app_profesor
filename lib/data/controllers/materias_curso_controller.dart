@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/materia_curso_model.dart';
 import '../services/materias_curso_service.dart';
 import '../providers/database_provider.dart';
-import '../providers/materias_curso_trigger_provider.dart';
+import '../providers/triggers/materias_curso_trigger_provider.dart';
 import '../providers/materias_curso_global_provider.dart';
 import '../services/horarios_service.dart';
 

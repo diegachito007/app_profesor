@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import 'asistencias.dart';
+import 'notas.dart';
 import '../../../shared/utils/texto_normalizado.dart';
 
 class JornadasPage extends ConsumerStatefulWidget {
@@ -80,7 +81,12 @@ class _JornadasPageState extends ConsumerState<JornadasPage> {
                       dia: widget.dia,
                       fecha: widget.fechaReal,
                     ),
-                    const Center(child: Text('Notas (en construcción)')),
+                    NotasSection(
+                      cursoId: widget.cursoId,
+                      materiaCursoId: widget.materiaCursoId,
+                      hora: int.parse(widget.hora),
+                      fecha: widget.fechaReal,
+                    ),
                     const Center(child: Text('Faltas (en construcción)')),
                     const Center(child: Text('Resumen (en construcción)')),
                   ],

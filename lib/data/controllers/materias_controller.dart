@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/materia_model.dart';
 import '../services/materias_service.dart';
 import '../providers/database_provider.dart';
-import '../providers/materias_trigger_provider.dart';
+import '../providers/triggers/materias_trigger_provider.dart';
 import '../providers/materias_curso_global_provider.dart';
 import '../services/materias_curso_service.dart';
 import '../services/horarios_service.dart'; // 🔁 nuevo import para limpiar bloques huérfanos

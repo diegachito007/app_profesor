@@ -208,8 +208,7 @@ class AsistenciasSection extends ConsumerWidget {
             ),
           ],
         ),
-        trailing: Padding(
-          padding: const EdgeInsets.only(right: 8),
+        trailing: IntrinsicWidth(
           child: ElevatedButton.icon(
             style: ElevatedButton.styleFrom(
               backgroundColor: _colorEstado(estado),
@@ -264,7 +263,7 @@ class AsistenciasSection extends ConsumerWidget {
                             .state =
                         nuevoEstado;
                   }
-                : null, // ✅ botón desactivado si no es hoy
+                : null,
           ),
         ),
       ),

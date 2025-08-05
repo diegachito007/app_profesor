@@ -3,7 +3,7 @@ import '../models/asistencia_model.dart';
 import '../services/asistencias_service.dart';
 import '../services/estudiantes_service.dart';
 import '../providers/database_provider.dart';
-import '../providers/asistencias_trigger_provider.dart';
+import '../providers/triggers/asistencias_trigger_provider.dart';
 
 class AsistenciasParams {
   final int cursoId;

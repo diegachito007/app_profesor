@@ -129,23 +129,53 @@ Future<void> _crearTablas(Database db) async {
       estudiante_id INTEGER NOT NULL,
       materia_curso_id INTEGER NOT NULL,
       hora INTEGER NOT NULL,
-      tipo_nota_id INTEGER NOT NULL,
+      nota_tipo_id INTEGER NOT NULL,
       tema TEXT NOT NULL,
-      nota_final REAL NOT NULL CHECK(nota BETWEEN 0 AND 10),
+      codigo_nota_tema TEXT NOT NULL,
+      nota_final REAL NOT NULL CHECK(nota_final BETWEEN 0 AND 10),
       estado TEXT CHECK(estado IN ('Regular', 'Recuperado', 'No asistió')),
       FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE,
-      FOREIGN KEY (tipo_nota_id) REFERENCES tipo_notas(id) ON DELETE CASCADE,
+      FOREIGN KEY (nota_tipo_id) REFERENCES notas_tipo(id) ON DELETE CASCADE,
       FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
     );
   ''');
 
   await db.execute('''
-    CREATE TABLE tipo_notas (
+    CREATE TABLE notas_detalle (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      nota_id INTEGER NOT NULL,
+      intento INTEGER NOT NULL CHECK(intento IN (1, 2, 3)),
+      nota REAL NOT NULL CHECK(nota BETWEEN 0 AND 10),
+      detalle TEXT,
+      fecha TEXT NOT NULL,
+      tipo_intento TEXT NOT NULL CHECK(tipo_intento IN ('Regular', 'Recuperación', 'Refuerzo académico')),
+      planificacion_url TEXT,
+      FOREIGN KEY (nota_id) REFERENCES notas(id) ON DELETE CASCADE
+    );
+  ''');
+
+  await db.execute('''
+    CREATE TABLE notas_tipo (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       nombre TEXT NOT NULL UNIQUE,
       prefijo TEXT NOT NULL,
       activo INTEGER NOT NULL DEFAULT 1 CHECK(activo IN (0, 1)),
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  ''');
+
+  await db.execute('''
+    CREATE TABLE codigos_usados (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tipo TEXT NOT NULL,
+      numero INTEGER NOT NULL,
+      materia_curso_id INTEGER NOT NULL,
+      tipo_nota_id INTEGER NOT NULL,
+      fecha TEXT,
+      hora INTEGER,
+      UNIQUE(tipo, numero, materia_curso_id, tipo_nota_id),
+      FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE,
+      FOREIGN KEY (tipo_nota_id) REFERENCES notas_tipo(id) ON DELETE CASCADE
     );
   ''');
 
@@ -198,7 +228,7 @@ Future<void> _crearTablas(Database db) async {
 
   await _insertarTiposMateria(db);
   await _insertarMateriasPorDefecto(db);
-  await _insertarTipoNotasPorDefecto(db); // ✅ NUEVA FUNCIÓN
+  await _insertarTipoNotasPorDefecto(db);
 }
 
 Future<void> _insertarTiposMateria(Database db) async {
@@ -307,7 +337,7 @@ Future<void> _insertarTipoNotasPorDefecto(Database db) async {
 
   for (final tipo in tipos) {
     await db.insert(
-      'tipo_notas',
+      'notas_tipo',
       tipo,
       conflictAlgorithm: ConflictAlgorithm.ignore,
     );
