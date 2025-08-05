@@ -90,9 +90,15 @@ class _NotasSectionState extends ConsumerState<NotasSection> {
                           });
                         },
                         backgroundColor: Colors.white,
-                        selectedColor: Colors.white,
+                        selectedColor: Colors.indigo.shade50,
                         showCheckmark: false,
                         visualDensity: VisualDensity.compact,
+                        side: BorderSide(
+                          color: seleccionado
+                              ? Colors.indigo
+                              : Colors.grey.shade300,
+                          width: 1.2,
+                        ),
                       );
                     }).toList(),
                   ),
