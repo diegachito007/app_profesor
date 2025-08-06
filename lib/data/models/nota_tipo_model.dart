@@ -13,6 +13,18 @@ class NotaTipoModel {
     required this.createdAt,
   });
 
+  /// 🧩 Constructor mínimo para usos como TemaNota
+  factory NotaTipoModel.minimo({required int id}) {
+    return NotaTipoModel(
+      id: id,
+      nombre: '',
+      prefijo: '',
+      activo: true,
+      createdAt: DateTime.now().toIso8601String(),
+    );
+  }
+
+  /// 🔄 Mapeo para insertar o actualizar en la base de datos
   Map<String, dynamic> toDatabaseMap() {
     return {
       'id': id,
@@ -23,6 +35,7 @@ class NotaTipoModel {
     };
   }
 
+  /// 🏗️ Constructor desde la base de datos
   factory NotaTipoModel.fromMap(Map<String, dynamic> map) {
     return NotaTipoModel(
       id: map['id'] as int?,

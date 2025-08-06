@@ -126,17 +126,18 @@ Future<void> _crearTablas(Database db) async {
     CREATE TABLE notas (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       fecha TEXT NOT NULL,
+      hora INTEGER NOT NULL,
       estudiante_id INTEGER NOT NULL,
       materia_curso_id INTEGER NOT NULL,
-      hora INTEGER NOT NULL,
       nota_tipo_id INTEGER NOT NULL,
-      tema TEXT NOT NULL,
+      tema_id INTEGER NOT NULL,
       codigo_nota_tema TEXT NOT NULL,
       nota_final REAL NOT NULL CHECK(nota_final BETWEEN 0 AND 10),
       estado TEXT CHECK(estado IN ('Regular', 'Recuperado', 'No asistió')),
       FOREIGN KEY (estudiante_id) REFERENCES estudiantes(id) ON DELETE CASCADE,
       FOREIGN KEY (nota_tipo_id) REFERENCES notas_tipo(id) ON DELETE CASCADE,
-      FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE
+      FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE,
+      FOREIGN KEY (tema_id) REFERENCES temas(id) ON DELETE CASCADE
     );
   ''');
 
@@ -165,17 +166,9 @@ Future<void> _crearTablas(Database db) async {
   ''');
 
   await db.execute('''
-    CREATE TABLE codigos_usados (
+    CREATE TABLE temas (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      tipo TEXT NOT NULL,
-      numero INTEGER NOT NULL,
-      materia_curso_id INTEGER NOT NULL,
-      tipo_nota_id INTEGER NOT NULL,
-      fecha TEXT,
-      hora INTEGER,
-      UNIQUE(tipo, numero, materia_curso_id, tipo_nota_id),
-      FOREIGN KEY (materia_curso_id) REFERENCES materias_curso(id) ON DELETE CASCADE,
-      FOREIGN KEY (tipo_nota_id) REFERENCES notas_tipo(id) ON DELETE CASCADE
+      nombre TEXT NOT NULL UNIQUE
     );
   ''');
 

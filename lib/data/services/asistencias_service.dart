@@ -102,4 +102,27 @@ class AsistenciasService {
       whereArgs: [asistencia.id],
     );
   }
+
+  /// 🔍 Obtiene todas las asistencias de un curso en un bloque específico
+  Future<List<AsistenciaModel>> obtenerPorCursoYBloque({
+    required int cursoId,
+    required String fecha,
+    required int materiaCursoId,
+    required int hora,
+  }) async {
+    final result = await db.rawQuery(
+      '''
+    SELECT a.*
+    FROM asistencias a
+    JOIN estudiantes e ON a.estudiante_id = e.id
+    WHERE e.curso_id = ?
+      AND a.fecha = ?
+      AND a.materia_curso_id = ?
+      AND a.hora = ?
+  ''',
+      [cursoId, fecha, materiaCursoId, hora],
+    );
+
+    return result.map(AsistenciaModel.fromMap).toList();
+  }
 }

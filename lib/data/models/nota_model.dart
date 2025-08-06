@@ -1,52 +1,64 @@
 class NotaModel {
   final int? id;
+  final String fecha;
+  final int hora;
+
   final int estudianteId;
   final int materiaCursoId;
-  final String fecha;
+  final int notaTipoId;
   final int temaId;
-  final int notaTipoId; // ← nuevo campo
-  final double valor;
-  final String? observacion;
+
+  final String codigoNotaTema;
+  final double notaFinal;
+  final String estado;
 
   NotaModel({
     this.id,
+    required this.fecha,
+    required this.hora,
     required this.estudianteId,
     required this.materiaCursoId,
-    required this.fecha,
+    required this.notaTipoId,
     required this.temaId,
-    required this.notaTipoId, // ← requerido
-    required this.valor,
-    this.observacion,
+    required this.codigoNotaTema,
+    required this.notaFinal,
+    this.estado = 'Regular',
   });
 
+  /// 🔄 Mapeo para insertar en la base de datos
   Map<String, dynamic> toDatabaseMap() {
     return {
-      'id': id,
+      if (id != null) 'id': id,
+      'fecha': fecha,
+      'hora': hora,
       'estudiante_id': estudianteId,
       'materia_curso_id': materiaCursoId,
-      'fecha': fecha,
+      'nota_tipo_id': notaTipoId,
       'tema_id': temaId,
-      'nota_tipo_id': notaTipoId, // ← actualizado
-      'valor': valor,
-      'observacion': observacion,
+      'codigo_nota_tema': codigoNotaTema,
+      'nota_final': notaFinal,
+      'estado': estado,
     };
   }
 
+  /// 🏗️ Constructor desde la base de datos
   factory NotaModel.fromMap(Map<String, dynamic> map) {
     return NotaModel(
       id: map['id'] as int?,
+      fecha: map['fecha'] as String,
+      hora: map['hora'] as int,
       estudianteId: map['estudiante_id'] as int,
       materiaCursoId: map['materia_curso_id'] as int,
-      fecha: map['fecha'] as String,
+      notaTipoId: map['nota_tipo_id'] as int,
       temaId: map['tema_id'] as int,
-      notaTipoId: map['nota_tipo_id'] as int, // ← actualizado
-      valor: map['valor'] as double,
-      observacion: map['observacion'] as String?,
+      codigoNotaTema: map['codigo_nota_tema'] as String,
+      notaFinal: map['nota_final'] as double,
+      estado: map['estado'] as String? ?? 'Regular',
     );
   }
 
   @override
   String toString() {
-    return 'NotaModel(id: $id, estudianteId: $estudianteId, materiaCursoId: $materiaCursoId, fecha: $fecha, temaId: $temaId, notaTipoId: $notaTipoId, valor: $valor)';
+    return 'NotaModel(id: $id, estudianteId: $estudianteId, materiaCursoId: $materiaCursoId, fecha: $fecha, hora: $hora, temaId: $temaId, notaTipoId: $notaTipoId, notaFinal: $notaFinal, estado: $estado)';
   }
 }
