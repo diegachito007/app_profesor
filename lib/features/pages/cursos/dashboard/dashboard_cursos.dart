@@ -15,11 +15,27 @@ class DashboardCursoPage extends StatefulWidget {
 
 class _DashboardCursoPageState extends State<DashboardCursoPage> {
   int _index = 0;
+  String _tituloPorIndex(int index) {
+    final base = widget.curso.nombreCompleto;
+    switch (index) {
+      case 0:
+        return '$base : Materias';
+      case 1:
+        return '$base : Estudiantes';
+      case 2:
+        return '$base : Registros';
+      default:
+        return base;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final tabs = [
-      MateriasTab(cursoId: widget.curso.id),
+      MateriasTab(
+        cursoId: widget.curso.id,
+        nombreCurso: widget.curso.nombreCompleto,
+      ),
       EstudiantesTab(cursoId: widget.curso.id),
       RegistroTab(cursoId: widget.curso.id),
     ];
@@ -31,10 +47,10 @@ class _DashboardCursoPageState extends State<DashboardCursoPage> {
         elevation: 0,
         centerTitle: true,
         title: Text(
-          widget.curso.nombreCompleto,
+          _tituloPorIndex(_index),
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -54,7 +70,7 @@ class _DashboardCursoPageState extends State<DashboardCursoPage> {
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.list_alt),
-            label: 'Registro',
+            label: 'Registros',
           ),
         ],
       ),

@@ -32,14 +32,30 @@ class PeriodosController extends AsyncNotifier<List<Periodo>> {
     DateTime inicio,
     DateTime fin,
   ) async {
+    final periodosActuales = state.maybeWhen(
+      data: (lista) => lista,
+      orElse: () => [],
+    );
+
+    final esPrimero = periodosActuales.isEmpty;
+
     final nuevo = Periodo(
       id: 0,
       nombre: nombre,
       inicio: inicio,
       fin: fin,
-      activo: false,
+      activo: esPrimero, // lo marcamos como activo si es el primero
     );
+
     await _service.insertar(nuevo);
+
+    // Si no es el primero pero se marcó como activo, desactiva los demás
+    if (!esPrimero && nuevo.activo) {
+      await _service.desactivarTodos();
+      // Activar el nuevo solo si se insertó con ID conocido (ver siguiente paso)
+      // await _service.activar(nuevo.id);
+    }
+
     await cargarPeriodos();
   }
 

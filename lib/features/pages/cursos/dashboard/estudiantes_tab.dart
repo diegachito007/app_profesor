@@ -171,15 +171,8 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: const Color(0xFFE0F0FF), width: 1.2),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromARGB(10, 0, 0, 0),
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: Colors.indigo),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [

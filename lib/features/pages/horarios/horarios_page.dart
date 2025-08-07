@@ -8,8 +8,9 @@ import '../../../data/models/horario_expandido.dart';
 import '../../../data/models/horario_model.dart';
 import '../../../routes/app_routes.dart';
 import '../../../shared/utils/texto_normalizado.dart';
-import '../../../shared/utils/fechas.dart'; // ✅ fechas
-import '../../../shared/utils/horas.dart'; // ✅ horas
+import '../../../shared/utils/fechas.dart';
+import '../../../shared/utils/horas.dart';
+import '../../../shared/utils/colores.dart';
 
 class HorariosPage extends ConsumerStatefulWidget {
   const HorariosPage({super.key});
@@ -65,41 +66,6 @@ class _HorariosPageState extends ConsumerState<HorariosPage> {
         }),
       ),
     );
-  }
-
-  Color colorPorCurso(String nombreCurso) {
-    final hash = nombreCurso.hashCode;
-    final r = (hash & 0xFF0000) >> 16;
-    final g = (hash & 0x00FF00) >> 8;
-    final b = (hash & 0x0000FF);
-    return Color.fromARGB((0.85 * 255).round(), r, g, b);
-  }
-
-  Color colorPorCursoMateria(String nombreCurso, String nombreMateria) {
-    final base = colorPorCurso(nombreCurso);
-    final materiaHash = nombreMateria.hashCode;
-    final delta = (materiaHash % 30) - 15;
-
-    int adjust(double channel) =>
-        ((channel * 255.0).round() + delta).clamp(0, 255);
-    final alpha = (base.a * 255.0).round() & 0xff;
-
-    return Color.fromARGB(
-      alpha,
-      adjust(base.r),
-      adjust(base.g),
-      adjust(base.b),
-    );
-  }
-
-  Color colorSuavizadoPorCursoMateria(
-    String curso,
-    String materia, {
-    bool esActivo = true,
-  }) {
-    final base = colorPorCursoMateria(curso, materia);
-    final factor = esActivo ? 0.12 : 0.05;
-    return Color.lerp(Colors.white, base, factor)!;
   }
 
   @override

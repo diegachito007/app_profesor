@@ -130,174 +130,230 @@ class _AgregarCursosPageState extends ConsumerState<AgregarCursosPage> {
         ),
         iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ...nivelesPorTipoMateria.entries.map((grupo) {
-              return Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.blue.shade100),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withAlpha(25),
-                      blurRadius: 3,
-                      offset: const Offset(0, 1),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.school, color: Colors.blueGrey),
-                        const SizedBox(width: 8),
-                        Text(
-                          grupo.key,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                            color: Colors.black87,
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final alturaTotal = constraints.maxHeight;
+          const alturaInferior = 180.0;
+          final alturaCard = alturaTotal - alturaInferior - 32;
+
+          return Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          'Desliza para ver otros niveles educativos.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontStyle: FontStyle.italic,
+                            color: Colors.grey,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: grupo.value.map((nivel) {
-                        final seleccionado = nivel == nivelSeleccionado;
-                        return ChoiceChip(
-                          label: Text(nivel),
-                          selected: seleccionado,
-                          onSelected: (_) {
-                            setState(() {
-                              nivelSeleccionado = nivel;
-                              paralelosSeleccionados.clear();
-                              _erroresDuplicados.clear();
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                  ],
-                ),
-              );
-            }),
-            const SizedBox(height: 8),
-            const Text(
-              'Selecciona los paralelos:',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              children: paralelos.map((p) {
-                final seleccionado = paralelosSeleccionados.contains(p);
-                return FilterChip(
-                  label: Text(p),
-                  selected: seleccionado,
-                  onSelected: (val) {
-                    setState(() {
-                      if (val) {
-                        paralelosSeleccionados.add(p);
-                      } else {
-                        paralelosSeleccionados.remove(p);
-                      }
-                      _erroresDuplicados.clear();
-                    });
-                  },
-                );
-              }).toList(),
-            ),
-            if (_erroresDuplicados.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: Card(
-                  color: Colors.orange.shade50,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    side: BorderSide(color: Colors.orange.shade300),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(
-                              Icons.warning_amber_rounded,
-                              color: Colors.orange,
-                            ),
-                            SizedBox(width: 8),
-                            Text(
-                              'Conflictos detectados:',
-                              style: TextStyle(
-                                color: Colors.orange,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
+                      ),
+                      SizedBox(
+                        height: alturaCard,
+                        child: PageView.builder(
+                          itemCount: nivelesPorTipoMateria.length,
+                          controller: PageController(viewportFraction: 0.92),
+                          physics: const BouncingScrollPhysics(),
+                          itemBuilder: (context, index) {
+                            final grupo = nivelesPorTipoMateria.entries
+                                .elementAt(index);
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 4,
                               ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        ..._erroresDuplicados.map(
-                          (e) => Padding(
-                            padding: const EdgeInsets.only(bottom: 4),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.error_outline,
-                                  size: 16,
-                                  color: Colors.orange,
-                                ),
-                                const SizedBox(width: 6),
-                                Expanded(
-                                  child: Text(
-                                    e,
-                                    style: const TextStyle(
-                                      color: Colors.orange,
-                                      fontSize: 13,
+                              child: SingleChildScrollView(
+                                child: Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    border: Border.all(
+                                      color: Colors.blue.shade100,
                                     ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.school,
+                                            color: Colors.blueGrey,
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              grupo.key,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                                color: Colors.black87,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 12),
+                                      Wrap(
+                                        spacing: 8,
+                                        runSpacing: 8,
+                                        children: grupo.value.map((nivel) {
+                                          final seleccionado =
+                                              nivel == nivelSeleccionado;
+                                          return ChoiceChip(
+                                            label: Text(nivel),
+                                            selected: seleccionado,
+                                            onSelected: (_) {
+                                              setState(() {
+                                                nivelSeleccionado = nivel;
+                                                paralelosSeleccionados.clear();
+                                                _erroresDuplicados.clear();
+                                              });
+                                            },
+                                          );
+                                        }).toList(),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                              ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                      if (_erroresDuplicados.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 16),
+                          child: Card(
+                            color: Colors.orange.shade50,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: BorderSide(color: Colors.orange.shade300),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Row(
+                                    children: [
+                                      Icon(
+                                        Icons.warning_amber_rounded,
+                                        color: Colors.orange,
+                                      ),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Conflictos detectados:',
+                                        style: TextStyle(
+                                          color: Colors.orange,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                  ..._erroresDuplicados.map(
+                                    (e) => Padding(
+                                      padding: const EdgeInsets.only(bottom: 4),
+                                      child: Row(
+                                        children: [
+                                          const Icon(
+                                            Icons.error_outline,
+                                            size: 16,
+                                            color: Colors.orange,
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Expanded(
+                                            child: Text(
+                                              e,
+                                              style: const TextStyle(
+                                                color: Colors.orange,
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                    ],
                   ),
                 ),
               ),
-            const SizedBox(height: 32),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.save),
-                label: _loading
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
+              SafeArea(
+                top: false,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  decoration: const BoxDecoration(color: Colors.white),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Selecciona los paralelos:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: paralelos.map((p) {
+                          final seleccionado = paralelosSeleccionados.contains(
+                            p,
+                          );
+                          return FilterChip(
+                            label: Text(p),
+                            selected: seleccionado,
+                            onSelected: (val) {
+                              setState(() {
+                                if (val) {
+                                  paralelosSeleccionados.add(p);
+                                } else {
+                                  paralelosSeleccionados.remove(p);
+                                }
+                                _erroresDuplicados.clear();
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          icon: const Icon(Icons.save),
+                          label: _loading
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text('Guardar Cursos'),
+                          onPressed: _loading ? null : guardarCursos,
                         ),
-                      )
-                    : const Text('Guardar Cursos'),
-                onPressed: _loading ? null : guardarCursos,
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          );
+        },
       ),
     );
   }

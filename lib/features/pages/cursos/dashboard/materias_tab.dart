@@ -6,11 +6,19 @@ import '../../../../data/controllers/materias_controller.dart';
 import '../../../../shared/utils/notificaciones.dart';
 import '../../materias_curso/agregar_materias_curso_page.dart';
 import '../../../../shared/utils/texto_normalizado.dart';
+import '../../../../shared/utils/colores.dart';
+
+final mostrarArchivadasProvider = StateProvider<bool>((ref) => false);
 
 class MateriasTab extends ConsumerWidget {
   final int cursoId;
+  final String nombreCurso;
 
-  const MateriasTab({super.key, required this.cursoId});
+  const MateriasTab({
+    super.key,
+    required this.cursoId,
+    required this.nombreCurso,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -19,12 +27,12 @@ class MateriasTab extends ConsumerWidget {
     );
     final materiasCatalogo = ref.watch(materiasControllerProvider).value ?? [];
     final materiaMap = {for (var m in materiasCatalogo) m.id: m.nombre};
+    final mostrarArchivadas = ref.watch(mostrarArchivadasProvider);
 
     return materiasCursoAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => Center(child: Text('Error al cargar materias: $e')),
       data: (materiasCurso) {
-        // ✅ Filtrar asignaciones válidas
         final activas = materiasCurso
             .where((mc) => mc.activo && materiaMap.containsKey(mc.materiaId))
             .toList();
@@ -33,26 +41,40 @@ class MateriasTab extends ConsumerWidget {
             .where((mc) => !mc.activo && materiaMap.containsKey(mc.materiaId))
             .toList();
 
-        // 🧪 Opcional: detectar asignaciones huérfanas
-        final huerfanas = materiasCurso
-            .where((mc) => !materiaMap.containsKey(mc.materiaId))
-            .toList();
-
-        if (huerfanas.isNotEmpty) {
-          debugPrint(
-            '⚠️ Asignaciones huérfanas detectadas: ${huerfanas.length}',
-          );
-        }
-
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  '${activas.length} activas · ${archivadas.length} archivadas',
-                  style: const TextStyle(fontSize: 14, color: Colors.black54),
+                Row(
+                  children: [
+                    Text(
+                      '${activas.length} ${activas.length == 1 ? "activa" : "activas"} · '
+                      '${archivadas.length} ${archivadas.length == 1 ? "archivada" : "archivadas"}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    if (archivadas.isNotEmpty)
+                      IconButton(
+                        icon: Icon(
+                          mostrarArchivadas
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          size: 20,
+                          color: Colors.grey.shade700,
+                        ),
+                        tooltip: mostrarArchivadas
+                            ? 'Ocultar archivadas'
+                            : 'Mostrar archivadas',
+                        onPressed: () {
+                          ref.read(mostrarArchivadasProvider.notifier).state =
+                              !mostrarArchivadas;
+                        },
+                      ),
+                  ],
                 ),
                 IconButton(
                   icon: const Icon(Icons.add_circle, color: Color(0xFF1565C0)),
@@ -102,10 +124,11 @@ class MateriasTab extends ConsumerWidget {
                 final nombre = materiaMap[mc.materiaId]!;
                 return _buildMateriaCard(context, ref, mc, nombre, true);
               }),
-              ...archivadas.map((mc) {
-                final nombre = materiaMap[mc.materiaId]!;
-                return _buildMateriaCard(context, ref, mc, nombre, false);
-              }),
+              if (mostrarArchivadas)
+                ...archivadas.map((mc) {
+                  final nombre = materiaMap[mc.materiaId]!;
+                  return _buildMateriaCard(context, ref, mc, nombre, false);
+                }),
             ],
           ],
         );
@@ -126,11 +149,19 @@ class MateriasTab extends ConsumerWidget {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: esArchivada ? const Color(0xFFF5F5F5) : Colors.white,
-        border: Border.all(
-          color: esArchivada ? Colors.grey.shade300 : Colors.blue.shade100,
+        color: colorSuavizadoPorMateria(
+          nombreCurso,
+          factor: activa ? 0.08 : 0.04,
         ),
         borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withAlpha((0.1 * 255).round()),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -143,9 +174,12 @@ class MateriasTab extends ConsumerWidget {
             child: Text(
               capitalizarTituloConTildes(nombre),
               style: TextStyle(
+                fontSize: 13, // 👈 Letra más pequeña para nombres largos
                 color: esArchivada ? Colors.black54 : Colors.black87,
                 fontStyle: esArchivada ? FontStyle.italic : FontStyle.normal,
               ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
             ),
           ),
           IconButton(
