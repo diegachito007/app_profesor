@@ -307,27 +307,6 @@ class _NotasSectionState extends ConsumerState<NotasSection> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (temas.isEmpty)
-          const Padding(
-            padding: EdgeInsets.only(bottom: 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.info_outline, color: Colors.grey),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'No hay temas registrados para este bloque. Agrega uno para comenzar.',
-                    style: TextStyle(
-                      color: Colors.grey,
-                      fontSize: 13,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
         tiposAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (e, _) => Text('Error al cargar tipos: $e'),
@@ -391,17 +370,19 @@ class _NotasSectionState extends ConsumerState<NotasSection> {
           ),
         ),
         if (temaSeleccionado == null)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Icon(Icons.info_outline, color: Colors.grey),
-                SizedBox(width: 8),
+                const Icon(Icons.info_outline, color: Colors.grey),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Selecciona un tema para ver y editar las notas.',
-                    style: TextStyle(
+                    temas.isEmpty
+                        ? 'No hay temas disponibles. Agrega uno para comenzar.'
+                        : 'Selecciona un tema para ver y editar las notas.',
+                    style: const TextStyle(
                       fontSize: 13,
                       fontStyle: FontStyle.italic,
                       color: Colors.grey,
@@ -411,7 +392,7 @@ class _NotasSectionState extends ConsumerState<NotasSection> {
               ],
             ),
           ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         if (temaSeleccionado != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
@@ -607,9 +588,6 @@ class _NotasSectionState extends ConsumerState<NotasSection> {
     List<TemaNota> temas,
     ValueChanged<TemaNota> onTemaAgregado,
   ) {
-    final formKey = GlobalKey<FormState>();
-    final temaDialogoController = TextEditingController();
-
     showDialog(
       context: context,
       builder: (_) {
@@ -617,208 +595,216 @@ class _NotasSectionState extends ConsumerState<NotasSection> {
         bool mostrarErrorTipo = false;
         String? errorLogico;
 
+        final temaDialogoController = TextEditingController();
+        final formKey = GlobalKey<FormState>();
+
         return Dialog(
           insetPadding: const EdgeInsets.symmetric(
             horizontal: 24,
             vertical: 16,
           ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Agregar tema',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: tipos.map((tipo) {
-                    final seleccionado = tipoDialogo?.id == tipo.id;
-                    final borderColor = seleccionado
-                        ? Colors.blue
-                        : Colors.grey.shade300;
+          child: StatefulBuilder(
+            builder: (context, setState) => SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Agregar tema',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: tipos.map((tipo) {
+                      final seleccionado = tipoDialogo?.id == tipo.id;
+                      final borderColor = seleccionado
+                          ? Colors.blue
+                          : Colors.grey.shade300;
 
-                    return ChoiceChip(
-                      label: Text(
-                        tipo.prefijo,
-                        style: TextStyle(
-                          color: seleccionado ? Colors.blue : Colors.black,
-                          fontWeight: seleccionado
-                              ? FontWeight.bold
-                              : FontWeight.normal,
+                      return ChoiceChip(
+                        label: Text(
+                          tipo.prefijo,
+                          style: TextStyle(
+                            color: seleccionado ? Colors.blue : Colors.black,
+                            fontWeight: seleccionado
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                          ),
+                        ),
+                        selected: seleccionado,
+                        onSelected: (_) {
+                          setState(() {
+                            tipoDialogo = tipo;
+                            mostrarErrorTipo = false;
+                            errorLogico = null;
+                          });
+                        },
+                        showCheckmark: false,
+                        visualDensity: VisualDensity.compact,
+                        backgroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                          side: BorderSide(color: borderColor, width: 1.0),
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  if (tipoDialogo != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 6),
+                      child: Text(
+                        '${tipoDialogo!.prefijo}: ${tipoDialogo!.nombre}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.indigo,
                         ),
                       ),
-                      selected: seleccionado,
-                      onSelected: (_) {
-                        tipoDialogo = tipo;
-                        mostrarErrorTipo = false;
-                        errorLogico = null;
-                        (context as Element).markNeedsBuild();
+                    ),
+                  if (mostrarErrorTipo && tipoDialogo == null)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 6),
+                      child: Text(
+                        'Debes seleccionar un tipo de nota',
+                        style: TextStyle(color: Colors.redAccent, fontSize: 12),
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+                  Form(
+                    key: formKey,
+                    child: TextFormField(
+                      controller: temaDialogoController,
+                      maxLines: 2,
+                      minLines: 1,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Campo obligatorio';
+                        }
+                        return null;
                       },
-                      showCheckmark: false,
-                      visualDensity: VisualDensity.compact,
-                      backgroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(6),
-                        side: BorderSide(color: borderColor, width: 1.0),
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                    );
-                  }).toList(),
-                ),
-                if (tipoDialogo != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 6),
-                    child: Text(
-                      '${tipoDialogo!.prefijo} ${tipoDialogo!.nombre}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.indigo,
+                      decoration: const InputDecoration(
+                        labelText: 'Tema',
+                        border: OutlineInputBorder(),
+                        isDense: true,
                       ),
                     ),
                   ),
-                if (mostrarErrorTipo && tipoDialogo == null)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 6),
-                    child: Text(
-                      'Debes seleccionar un tipo de nota',
-                      style: TextStyle(color: Colors.redAccent, fontSize: 12),
-                    ),
-                  ),
-                const SizedBox(height: 12),
-                Form(
-                  key: formKey,
-                  child: TextFormField(
-                    controller: temaDialogoController,
-                    maxLines: 2,
-                    minLines: 1,
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return 'Campo obligatorio';
-                      }
-                      return null;
-                    },
-                    decoration: const InputDecoration(
-                      labelText: 'Tema',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                  ),
-                ),
-                if (errorLogico != null)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 12),
-                    child: Card(
-                      color: Colors.orange.shade50,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        side: BorderSide(color: Colors.orange.shade300),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.warning_amber_rounded,
-                              color: Colors.orange,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                errorLogico!,
-                                style: const TextStyle(
-                                  color: Colors.orange,
-                                  fontSize: 14,
+                  if (errorLogico != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Card(
+                        color: Colors.orange.shade50,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(color: Colors.orange.shade300),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.warning_amber_rounded,
+                                color: Colors.orange,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  errorLogico!,
+                                  style: const TextStyle(
+                                    color: Colors.orange,
+                                    fontSize: 14,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancelar'),
-                    ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () async {
-                        final valido =
-                            formKey.currentState?.validate() ?? false;
-                        if (!valido) return;
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancelar'),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final valido =
+                              formKey.currentState?.validate() ?? false;
+                          if (!valido) return;
 
-                        if (tipoDialogo == null) {
-                          mostrarErrorTipo = true;
-                          (context as Element).markNeedsBuild();
-                          return;
-                        }
+                          if (tipoDialogo == null) {
+                            setState(() => mostrarErrorTipo = true);
+                            return;
+                          }
 
-                        final tema = temaDialogoController.text.trim();
-                        final temaDuplicado = temas.any(
-                          (t) =>
-                              t.descripcion.toLowerCase().trim() ==
-                              tema.toLowerCase().trim(),
-                        );
-
-                        if (temaDuplicado) {
-                          errorLogico = 'Este tema ya fue registrado';
-                          (context as Element).markNeedsBuild();
-                          return;
-                        }
-
-                        final nuevoTema = await ref
-                            .read(
-                              notasControllerProvider(
-                                NotasParams(
-                                  cursoId: widget.cursoId,
-                                  materiaCursoId: widget.materiaCursoId,
-                                  hora: widget.hora,
-                                  fecha: fechaTexto,
-                                  temaCodigo: '',
-                                ),
-                              ).notifier,
-                            )
-                            .crearTemaYNotasIniciales(
-                              cursoId: widget.cursoId,
-                              materiaCursoId: widget.materiaCursoId,
-                              hora: widget.hora,
-                              fecha: widget.fecha,
-                              temaNombre: tema,
-                              tipo: tipoDialogo!,
-                            );
-
-                        onTemaAgregado(nuevoTema);
-
-                        if (context.mounted) {
-                          Navigator.pop(context);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                '✅ Tema creado: ${nuevoTema.codigo} – ${nuevoTema.descripcion}',
-                              ),
-                              backgroundColor: Colors.green,
-                            ),
+                          final tema = capitalizarTituloConTildes(
+                            temaDialogoController.text.trim(),
                           );
-                        }
-                      },
-                      child: const Text('Agregar'),
-                    ),
-                  ],
-                ),
-              ],
+                          final temaDuplicado = temas.any(
+                            (t) =>
+                                t.descripcion.toLowerCase().trim() ==
+                                tema.toLowerCase().trim(),
+                          );
+
+                          if (temaDuplicado) {
+                            setState(
+                              () => errorLogico = 'Este tema ya fue registrado',
+                            );
+                            return;
+                          }
+
+                          final nuevoTema = await ref
+                              .read(
+                                notasControllerProvider(
+                                  NotasParams(
+                                    cursoId: widget.cursoId,
+                                    materiaCursoId: widget.materiaCursoId,
+                                    hora: widget.hora,
+                                    fecha: fechaTexto,
+                                    temaCodigo: '',
+                                  ),
+                                ).notifier,
+                              )
+                              .crearTemaYNotasIniciales(
+                                cursoId: widget.cursoId,
+                                materiaCursoId: widget.materiaCursoId,
+                                hora: widget.hora,
+                                fecha: widget.fecha,
+                                temaNombre: tema,
+                                tipo: tipoDialogo!,
+                              );
+
+                          onTemaAgregado(nuevoTema);
+
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '✅ Tema creado: ${nuevoTema.codigo} – ${nuevoTema.descripcion}',
+                                ),
+                                backgroundColor: Colors.green,
+                              ),
+                            );
+                          }
+                        },
+                        child: const Text('Agregar'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );

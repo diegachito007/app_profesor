@@ -32,7 +32,7 @@ class JornadasPage extends ConsumerStatefulWidget {
 
 class _JornadasPageState extends ConsumerState<JornadasPage> {
   int _index = 0;
-  final List<String> _titulos = ['Asistencia', 'Notas', 'Faltas', 'Resumen'];
+  final List<String> _titulos = ['Asistencia', 'Notas', 'Resumen'];
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +52,6 @@ class _JornadasPageState extends ConsumerState<JornadasPage> {
           ),
         ),
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: null,
       ),
       backgroundColor: Colors.white,
       body: SafeArea(
@@ -87,7 +86,6 @@ class _JornadasPageState extends ConsumerState<JornadasPage> {
                       hora: int.parse(widget.hora),
                       fecha: widget.fechaReal,
                     ),
-                    const Center(child: Text('Faltas (en construcción)')),
                     const Center(child: Text('Resumen (en construcción)')),
                   ],
                 ),
@@ -108,10 +106,6 @@ class _JornadasPageState extends ConsumerState<JornadasPage> {
             label: 'Asistencia',
           ),
           BottomNavigationBarItem(icon: Icon(Icons.edit_note), label: 'Notas'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.event_busy),
-            label: 'Faltas',
-          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.receipt_long),
             label: 'Resumen',
