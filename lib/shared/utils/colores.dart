@@ -47,3 +47,8 @@ Color colorSuavizadoPorMateria(String nombreCurso, {double factor = 0.08}) {
   final base = colorPorCurso(nombreCurso);
   return Color.lerp(Colors.white, base, factor)!;
 }
+
+Color colorSuavizadoPorEstudiante(String nombreCurso, {double factor = 0.08}) {
+  final base = colorPorCurso(nombreCurso);
+  return Color.lerp(Colors.white, base, factor)!;
+}

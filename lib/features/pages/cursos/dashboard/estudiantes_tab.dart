@@ -6,15 +6,21 @@ import 'package:excel/excel.dart' as xls;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:file_selector/file_selector.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../data/models/estudiante_model.dart';
 import '../../../../data/controllers/estudiantes_controller.dart';
 import '../../../../shared/utils/texto_normalizado.dart';
+import '../../../../shared/utils/colores.dart';
 
 class EstudiantesTab extends ConsumerStatefulWidget {
   final int cursoId;
-  const EstudiantesTab({super.key, required this.cursoId});
+  final String nombreCurso;
+
+  const EstudiantesTab({
+    super.key,
+    required this.cursoId,
+    required this.nombreCurso,
+  });
   @override
   ConsumerState<EstudiantesTab> createState() => _EstudiantesTabState();
 }
@@ -22,6 +28,7 @@ class EstudiantesTab extends ConsumerStatefulWidget {
 class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
   String _filtro = '';
   bool _mostrarBuscador = false;
+  final Set<int> _expandidos = {};
 
   @override
   Widget build(BuildContext context) {
@@ -166,98 +173,110 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
   }
 
   Widget _buildCardEstudiante(BuildContext context, Estudiante est) {
+    final isExpanded = _expandidos.contains(est.id);
+    final fondoColor = colorSuavizadoPorEstudiante(
+      widget.nombreCurso,
+      factor: 0.08,
+    );
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border.all(color: Colors.indigo),
-        borderRadius: BorderRadius.circular(8),
+        color: fondoColor,
+        borderRadius: BorderRadius.circular(6),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 1)),
+        ],
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              '${capitalizarConTildes(est.apellido)} ${capitalizarConTildes(est.nombre)}',
-              style: const TextStyle(fontSize: 14, color: Colors.black87),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${capitalizarConTildes(est.apellido)} ${capitalizarConTildes(est.nombre)}',
+                  style: const TextStyle(fontSize: 13.5, color: Colors.black87),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              IconButton(
+                icon: Icon(
+                  isExpanded ? Icons.visibility_off : Icons.visibility,
+                  size: 20,
+                  color: Colors.blueGrey,
+                ),
+                tooltip: isExpanded ? 'Ocultar detalles' : 'Ver detalles',
+                onPressed: () {
+                  setState(() {
+                    if (isExpanded) {
+                      _expandidos.remove(est.id);
+                    } else {
+                      _expandidos.add(est.id);
+                    }
+                  });
+                },
+              ),
+              IconButton(
+                icon: const Icon(
+                  Icons.more_vert,
+                  size: 20,
+                  color: Colors.black54,
+                ),
+                tooltip: 'Opciones',
+                onPressed: () => _mostrarOpcionesEstudiante(context, est),
+              ),
+            ],
+          ),
+          if (isExpanded) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Cédula: ${est.cedula}',
+              style: const TextStyle(fontSize: 12.5, color: Colors.black87),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.info_outline, color: Colors.blueGrey),
-            tooltip: 'Ver información',
-            onPressed: () => _mostrarDialogoEstudiante(context, est),
-          ),
+            const SizedBox(height: 2),
+            Text(
+              'Teléfono: ${est.telefono}',
+              style: const TextStyle(fontSize: 12.5, color: Colors.black87),
+            ),
+          ],
         ],
       ),
     );
   }
 
-  void _mostrarDialogoEstudiante(BuildContext context, Estudiante est) {
-    showDialog(
+  void _mostrarOpcionesEstudiante(BuildContext context, Estudiante est) {
+    showModalBottomSheet(
       context: context,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        contentPadding: const EdgeInsets.all(16),
-        content: Column(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => SafeArea(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                const Icon(Icons.person, size: 20, color: Colors.blueGrey),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '${capitalizarConTildes(est.apellido)} ${capitalizarConTildes(est.nombre)}',
-                    style: const TextStyle(fontSize: 16),
-                  ),
-                ),
-              ],
+            ListTile(
+              leading: const Icon(Icons.edit_outlined, color: Colors.blueGrey),
+              title: const Text('Editar estudiante'),
+              onTap: () {
+                Navigator.pop(context);
+                _mostrarFormulario(context, est);
+              },
             ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                const Icon(Icons.badge, size: 20, color: Colors.blueGrey),
-                const SizedBox(width: 8),
-                Text('Cédula: ${est.cedula}'),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                const Icon(Icons.phone, size: 20, color: Colors.green),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => _llamar(est.telefono),
-                  child: Text(
-                    est.telefono,
-                    style: const TextStyle(color: Colors.blue),
-                  ),
-                ),
-              ],
+            ListTile(
+              leading: const Icon(
+                Icons.delete_outline,
+                color: Colors.redAccent,
+              ),
+              title: const Text('Eliminar estudiante'),
+              onTap: () async {
+                Navigator.pop(context);
+                await _eliminarEstudiante(context, est);
+              },
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _mostrarFormulario(context, est);
-            },
-            child: const Text('Editar'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _eliminarEstudiante(context, est);
-            },
-            child: const Text('Eliminar', style: TextStyle(color: Colors.red)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
       ),
     );
   }
@@ -312,11 +331,6 @@ class _EstudiantesTabState extends ConsumerState<EstudiantesTab> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Estudiante eliminado')));
-  }
-
-  Future<void> _llamar(String numero) async {
-    final uri = Uri(scheme: 'tel', path: numero);
-    if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
   void _mostrarMenu(BuildContext context) {

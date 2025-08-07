@@ -36,7 +36,10 @@ class _DashboardCursoPageState extends State<DashboardCursoPage> {
         cursoId: widget.curso.id,
         nombreCurso: widget.curso.nombreCompleto,
       ),
-      EstudiantesTab(cursoId: widget.curso.id),
+      EstudiantesTab(
+        cursoId: widget.curso.id,
+        nombreCurso: widget.curso.nombreCompleto,
+      ),
       RegistroTab(cursoId: widget.curso.id),
     ];
 
@@ -50,7 +53,7 @@ class _DashboardCursoPageState extends State<DashboardCursoPage> {
           _tituloPorIndex(_index),
           style: const TextStyle(
             color: Colors.white,
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: FontWeight.w600,
           ),
         ),

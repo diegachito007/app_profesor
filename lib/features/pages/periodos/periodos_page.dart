@@ -270,7 +270,7 @@ class _PeriodosPageState extends ConsumerState<PeriodosPage> {
                 },
               ),
             ListTile(
-              leading: const Icon(Icons.edit, color: Colors.blueGrey),
+              leading: const Icon(Icons.edit_outlined, color: Colors.blueGrey),
               title: const Text('Editar período'),
               onTap: () {
                 Navigator.pop(context);
